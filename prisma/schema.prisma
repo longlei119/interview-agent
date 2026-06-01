@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+
+  practiceRecords   PracticeRecord[]
+  interviewSessions InterviewSession[]
+}
+
+model Question {
+  id              String   @id @default(cuid())
+  category        String // 前端 / 后端 / 算法 / 行为 ...
+  difficulty      String // 简单 / 中等 / 困难
+  title           String
+  body            String
+  referenceAnswer String
+  tags            String // 逗号分隔
+  createdAt       DateTime @default(now())
+
+  practiceRecords PracticeRecord[]
+}
+
+model PracticeRecord {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  userAnswer String
+  aiFeedback String
+  score      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model InterviewSession {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String // 目标岗位，如「前端工程师」
+  level     String // 初级 / 中级 / 高级
+  status    String   @default("active") // active / finished
+  summary   String   @default("")
+  score     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages InterviewMessage[]
+
+  @@index([userId])
+}
+
+model InterviewMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  role      String // interviewer / candidate
+  content   String
+  createdAt DateTime @default(now())
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
