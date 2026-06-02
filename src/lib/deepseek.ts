@@ -66,6 +66,16 @@ export class VisionModelNotConfiguredError extends Error {
   }
 }
 
+// 接口返回非 2xx 时抛出，带上 status 供调用方判断是否值得重试（5xx/429 多为瞬时）
+export class DeepSeekApiError extends Error {
+  status: number;
+  constructor(status: number, body: string) {
+    super(`DeepSeek 接口错误 ${status}: ${body}`);
+    this.name = "DeepSeekApiError";
+    this.status = status;
+  }
+}
+
 // 一次性返回完整结果
 export async function chat(
   messages: ChatMessage[],
@@ -92,7 +102,7 @@ export async function chat(
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`DeepSeek 接口错误 ${res.status}: ${text}`);
+    throw new DeepSeekApiError(res.status, text);
   }
 
   const data = await res.json();
@@ -125,7 +135,7 @@ export async function* chatStream(
 
   if (!res.ok || !res.body) {
     const text = await res.text().catch(() => "");
-    throw new Error(`DeepSeek 接口错误 ${res.status}: ${text}`);
+    throw new DeepSeekApiError(res.status, text);
   }
 
   const reader = res.body.getReader();
