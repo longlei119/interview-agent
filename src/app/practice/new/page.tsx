@@ -1,9 +1,15 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { buildTopicTree, flattenForSelect } from "@/lib/topics";
 import { QuestionForm } from "@/components/QuestionForm";
 
-export default async function NewQuestionPage() {
+export default async function NewQuestionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ topic?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login?from=/practice/new");
 
@@ -25,6 +31,16 @@ export default async function NewQuestionPage() {
     );
   }
 
+  const { topic } = await searchParams;
+
+  const flatTopics = await prisma.topic.findMany({
+    where: { userId: user.id },
+    select: { id: true, name: true, parentId: true, sortOrder: true },
+  });
+  const topicOptions = flattenForSelect(buildTopicTree(flatTopics));
+  // 预选话题（来自 ?topic=，需是自己的）
+  const preselect = topic && flatTopics.some((t) => t.id === topic) ? topic : null;
+
   return (
     <div className="mx-auto max-w-2xl">
       <Link
@@ -37,7 +53,18 @@ export default async function NewQuestionPage() {
       <p className="mb-6 text-sm text-gray-500">
         题目默认私有，只有你自己能看到。创建后可在详情页设为公开，分享到题库广场。
       </p>
-      <QuestionForm />
+      <QuestionForm
+        topicOptions={topicOptions}
+        direction={user.direction || "其他"}
+        initial={{
+          difficulty: "中等",
+          title: "",
+          body: "",
+          referenceAnswer: "",
+          tags: "",
+          topicId: preselect,
+        }}
+      />
     </div>
   );
 }

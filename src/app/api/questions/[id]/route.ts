@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { isValidDirection, isValidDifficulty } from "@/lib/directions";
+import { isValidDifficulty } from "@/lib/directions";
 
-// 改题：作者本人。可改内容、切换 visibility；manualHeat 仅管理员可调。
+// 改题：作者本人。可改内容、切换 visibility、移动话题；manualHeat 仅管理员可调。
+// 方向不在此改（方向跟随个人方向）。
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -34,12 +35,6 @@ export async function PATCH(
 
   // 内容字段：作者本人才能改
   if (isOwner) {
-    if (body.direction !== undefined) {
-      if (!isValidDirection(body.direction)) {
-        return NextResponse.json({ error: "方向不在可选范围内" }, { status: 400 });
-      }
-      data.direction = body.direction;
-    }
     if (body.difficulty !== undefined) {
       if (!isValidDifficulty(body.difficulty)) {
         return NextResponse.json({ error: "难度不在可选范围内" }, { status: 400 });
@@ -53,6 +48,20 @@ export async function PATCH(
     if (typeof body.tags === "string") data.tags = body.tags.trim();
     if (body.visibility === "public" || body.visibility === "private") {
       data.visibility = body.visibility;
+    }
+    // 移动话题：null = 未分类；非空必须是自己的话题
+    if (body.topicId !== undefined) {
+      if (body.topicId === null) {
+        data.topicId = null;
+      } else {
+        const topic = await prisma.topic.findFirst({
+          where: { id: body.topicId, userId: user.id },
+        });
+        if (!topic) {
+          return NextResponse.json({ error: "话题不存在" }, { status: 404 });
+        }
+        data.topicId = body.topicId;
+      }
     }
   }
 

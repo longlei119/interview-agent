@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { buildTopicTree, flattenForSelect } from "@/lib/topics";
 import { QuestionForm } from "@/components/QuestionForm";
 
 export default async function EditQuestionPage({
@@ -35,6 +36,12 @@ export default async function EditQuestionPage({
     );
   }
 
+  const flatTopics = await prisma.topic.findMany({
+    where: { userId: user.id },
+    select: { id: true, name: true, parentId: true, sortOrder: true },
+  });
+  const topicOptions = flattenForSelect(buildTopicTree(flatTopics));
+
   return (
     <div className="mx-auto max-w-2xl">
       <Link
@@ -46,13 +53,15 @@ export default async function EditQuestionPage({
       <h1 className="mb-6 text-2xl font-bold text-gray-900">编辑题目</h1>
       <QuestionForm
         questionId={question.id}
+        topicOptions={topicOptions}
+        direction={user.direction || "其他"}
         initial={{
-          direction: question.direction,
           difficulty: question.difficulty,
           title: question.title,
           body: question.body,
           referenceAnswer: question.referenceAnswer,
           tags: question.tags,
+          topicId: question.topicId,
         }}
       />
     </div>

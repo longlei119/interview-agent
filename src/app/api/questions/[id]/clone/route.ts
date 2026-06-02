@@ -34,6 +34,7 @@ export async function POST(
     prisma.question.create({
       data: {
         ownerId: user.id,
+        topicId: null, // 拉取来的题进「未分类」——对方的话题树和你的不同，自己再归类
         direction: source.direction,
         difficulty: source.difficulty,
         title: source.title,

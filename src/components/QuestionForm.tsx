@@ -2,36 +2,55 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { DIRECTIONS, DIFFICULTIES } from "@/lib/directions";
+import { DIFFICULTIES } from "@/lib/directions";
 
 export interface QuestionFormValues {
-  direction: string;
   difficulty: string;
   title: string;
   body: string;
   referenceAnswer: string;
   tags: string;
+  topicId: string | null;
+}
+
+// 话题下拉用：扁平、带缩进层级名（如「AI面试 / RAG系统」）
+export interface TopicOption {
+  id: string;
+  label: string;
 }
 
 interface Props {
   // 编辑模式传 questionId 和初始值；新建模式不传
   questionId?: string;
   initial?: QuestionFormValues;
+  // 当前用户的话题选项（含层级路径），用于归类
+  topicOptions: TopicOption[];
+  // 个人方向，仅用于展示提示（方向由后端按个人方向写入）
+  direction: string;
 }
 
-const empty: QuestionFormValues = {
-  direction: DIRECTIONS[0],
-  difficulty: DIFFICULTIES[1], // 默认「中等」
-  title: "",
-  body: "",
-  referenceAnswer: "",
-  tags: "",
-};
+function makeEmpty(topicId: string | null): QuestionFormValues {
+  return {
+    difficulty: DIFFICULTIES[1], // 默认「中等」
+    title: "",
+    body: "",
+    referenceAnswer: "",
+    tags: "",
+    topicId,
+  };
+}
 
-export function QuestionForm({ questionId, initial }: Props) {
+export function QuestionForm({
+  questionId,
+  initial,
+  topicOptions,
+  direction,
+}: Props) {
   const router = useRouter();
   const isEdit = Boolean(questionId);
-  const [values, setValues] = useState<QuestionFormValues>(initial ?? empty);
+  const [values, setValues] = useState<QuestionFormValues>(
+    initial ?? makeEmpty(null)
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -77,21 +96,9 @@ export function QuestionForm({ questionId, initial }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">方向</label>
-          <select
-            value={values.direction}
-            onChange={(e) => set("direction", e.target.value)}
-            className={inputClass}
-          >
-            {DIRECTIONS.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">难度</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            难度
+          </label>
           <select
             value={values.difficulty}
             onChange={(e) => set("difficulty", e.target.value)}
@@ -104,7 +111,28 @@ export function QuestionForm({ questionId, initial }: Props) {
             ))}
           </select>
         </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            话题分类
+          </label>
+          <select
+            value={values.topicId ?? ""}
+            onChange={(e) => set("topicId", e.target.value || null)}
+            className={inputClass}
+          >
+            <option value="">未分类</option>
+            {topicOptions.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      <p className="text-xs text-gray-400">
+        方向跟随你的个人方向（当前：{direction}），无需逐题选择。
+      </p>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">标题</label>
@@ -145,14 +173,14 @@ export function QuestionForm({ questionId, initial }: Props) {
 
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">
-          标签 <span className="font-normal text-gray-400">（用英文逗号分隔，如 React,Hooks）</span>
+          标签 <span className="font-normal text-gray-400">（用英文逗号分隔，如 缓存,并发）</span>
         </label>
         <input
           type="text"
           value={values.tags}
           onChange={(e) => set("tags", e.target.value)}
           className={inputClass}
-          placeholder="React,Hooks,性能"
+          placeholder="缓存,并发,JVM"
         />
       </div>
 

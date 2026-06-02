@@ -18,16 +18,37 @@ model User {
   createdAt    DateTime @default(now())
 
   questions         Question[] // 我创建/拥有的题
+  topics            Topic[] // 我的话题树（私人）
   practiceRecords   PracticeRecord[]
   interviewSessions InterviewSession[]
   likes             QuestionLike[]
   views             QuestionView[]
 }
 
+// 私人话题树：每个用户一棵，根节点 parentId 为 null，可任意嵌套。
+// 方向不进树（方向是用户个人属性），树里全是话题，如「分布式」「AI面试 → RAG系统」。
+model Topic {
+  id        String   @id @default(cuid())
+  userId    String // 归属用户
+  parentId  String? // 父话题，根节点为 null
+  name      String
+  sortOrder Int      @default(0) // 同级排序
+  createdAt DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Topic?     @relation("TopicChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Topic[]    @relation("TopicChildren")
+  questions Question[]
+
+  @@index([userId])
+  @@index([parentId])
+}
+
 model Question {
   id              String    @id @default(cuid())
   ownerId         String // 创建者/拥有者
-  direction       String // 方向，如「前端」
+  topicId         String? // 所属话题节点，null = 未分类（拉取来的副本默认未分类）
+  direction       String // 方向，如「前端」——供题库广场跨用户筛选
   difficulty      String // 简单 / 中等 / 困难
   title           String
   body            String
@@ -45,11 +66,13 @@ model Question {
   createdAt       DateTime  @default(now())
 
   owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  topic           Topic?           @relation(fields: [topicId], references: [id], onDelete: SetNull)
   practiceRecords PracticeRecord[]
   likes           QuestionLike[]
   views           QuestionView[]
 
   @@index([ownerId])
+  @@index([topicId])
   @@index([visibility, isDelisted])
 }
 
