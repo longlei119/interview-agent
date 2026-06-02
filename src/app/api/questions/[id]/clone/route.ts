@@ -40,6 +40,7 @@ export async function POST(
         title: source.title,
         body: source.body,
         referenceAnswer: source.referenceAnswer,
+        answerGeneratedByAi: source.answerGeneratedByAi, // AI 答案标记跟随副本，方便核对
         tags: source.tags,
         visibility: "private",
         sourceId: source.id,

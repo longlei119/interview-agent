@@ -41,6 +41,7 @@ export default async function ExplorePage({
       cloneCount: true,
       likeCount: true,
       viewCount: true,
+      answerGeneratedByAi: true,
       owner: { select: { name: true } },
     },
   });
@@ -143,6 +144,11 @@ export default async function ExplorePage({
                   >
                     {q.difficulty}
                   </span>
+                  {q.answerGeneratedByAi && (
+                    <span className="rounded-md bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
+                      🤖 AI 答案
+                    </span>
+                  )}
                   {mine && (
                     <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
                       我发布的

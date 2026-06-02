@@ -61,6 +61,7 @@ export default async function PracticePage({
       tags: true,
       visibility: true,
       topicId: true,
+      answerGeneratedByAi: true,
     },
   });
 
@@ -227,6 +228,11 @@ export default async function PracticePage({
                     {q.visibility === "public" && (
                       <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">
                         已公开
+                      </span>
+                    )}
+                    {q.answerGeneratedByAi && (
+                      <span className="rounded-md bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
+                        🤖 AI 答案
                       </span>
                     )}
                   </div>

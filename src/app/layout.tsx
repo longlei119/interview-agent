@@ -23,7 +23,11 @@ export default async function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
-        <Navbar userName={user?.name ?? null} role={user?.role ?? null} />
+        <Navbar
+          userName={user?.name ?? null}
+          role={user?.role ?? null}
+          canCreate={user?.canCreate ?? false}
+        />
         <main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
       </body>
     </html>

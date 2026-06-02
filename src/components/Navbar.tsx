@@ -14,19 +14,22 @@ const navItems = [
 export function Navbar({
   userName,
   role,
+  canCreate,
 }: {
   userName: string | null;
   role: string | null;
+  canCreate: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  // 管理员额外多一个后台入口
-  const items =
-    role === "admin"
-      ? [...navItems, { href: "/admin", label: "管理后台" }]
-      : navItems;
+  // 有加题权限的用户多一个「导入题目」入口；管理员再多一个后台入口
+  const items = [
+    ...navItems,
+    ...(canCreate ? [{ href: "/practice/import", label: "导入题目" }] : []),
+    ...(role === "admin" ? [{ href: "/admin", label: "管理后台" }] : []),
+  ];
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -34,9 +37,14 @@ export function Navbar({
     router.refresh();
   }
 
+  // 取最长匹配的项作为高亮项，避免 /practice/import 同时点亮「我的题库」和「导入题目」
+  const activeHref = [...items.map((i) => i.href), "/login", "/register"]
+    .filter((h) => pathname === h || pathname.startsWith(h + "/"))
+    .sort((a, b) => b.length - a.length)[0];
+
   const linkClass = (href: string) =>
     `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-      pathname.startsWith(href)
+      href === activeHref
         ? "bg-brand-500 text-white"
         : "text-gray-600 hover:bg-brand-50 hover:text-brand-600"
     }`;

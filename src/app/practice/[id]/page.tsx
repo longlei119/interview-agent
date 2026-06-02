@@ -101,6 +101,11 @@ export default async function QuestionPage({
               已下架
             </span>
           )}
+          {question.answerGeneratedByAi && (
+            <span className="rounded-md bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
+              🤖 AI 生成答案
+            </span>
+          )}
           <span className="ml-auto text-xs text-gray-400">🔥 热度 {heat}</span>
         </div>
 

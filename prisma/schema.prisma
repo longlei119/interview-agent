@@ -53,6 +53,8 @@ model Question {
   title           String
   body            String
   referenceAnswer String
+  answerGeneratedByAi Boolean @default(false) // 参考答案由 AI 补全 → 显示「🤖 AI 生成答案」徽章
+  importedByAi        Boolean @default(false) // 整题来自「导入题目」流水线，便于批量筛选核对
   tags            String // 逗号分隔
   visibility      String    @default("private") // private | public
   isDelisted      Boolean   @default(false) // 管理员下架
