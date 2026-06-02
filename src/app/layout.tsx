@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
-import { getSession } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "AI 面试助手",
@@ -19,11 +19,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
+  const user = await getCurrentUser();
   return (
     <html lang="zh-CN">
       <body>
-        <Navbar userName={session?.name ?? null} />
+        <Navbar userName={user?.name ?? null} role={user?.role ?? null} />
         <main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
       </body>
     </html>

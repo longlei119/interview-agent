@@ -12,23 +12,71 @@ model User {
   email        String   @unique
   passwordHash String
   name         String
+  role         String   @default("user") // user | admin
+  canCreate    Boolean  @default(true) // 加题权限，管理员可关闭
+  direction    String? // 用户方向，如「前端」
   createdAt    DateTime @default(now())
 
+  questions         Question[] // 我创建/拥有的题
   practiceRecords   PracticeRecord[]
   interviewSessions InterviewSession[]
+  likes             QuestionLike[]
+  views             QuestionView[]
 }
 
 model Question {
-  id              String   @id @default(cuid())
-  category        String // 前端 / 后端 / 算法 / 行为 ...
+  id              String    @id @default(cuid())
+  ownerId         String // 创建者/拥有者
+  direction       String // 方向，如「前端」
   difficulty      String // 简单 / 中等 / 困难
   title           String
   body            String
   referenceAnswer String
   tags            String // 逗号分隔
-  createdAt       DateTime @default(now())
+  visibility      String    @default("private") // private | public
+  isDelisted      Boolean   @default(false) // 管理员下架
+  deletedAt       DateTime? // 软删除标记
+  // 热度分量（分开存，便于改权重）
+  manualHeat      Int       @default(0)
+  viewCount       Int       @default(0)
+  likeCount       Int       @default(0)
+  cloneCount      Int       @default(0)
+  sourceId        String? // 克隆来源题 id
+  createdAt       DateTime  @default(now())
 
+  owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   practiceRecords PracticeRecord[]
+  likes           QuestionLike[]
+  views           QuestionView[]
+
+  @@index([ownerId])
+  @@index([visibility, isDelisted])
+}
+
+model QuestionLike {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([questionId])
+}
+
+model QuestionView {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([questionId])
 }
 
 model PracticeRecord {

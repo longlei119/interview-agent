@@ -4,11 +4,14 @@
 
 ## ✨ 功能
 
-- **智能刷题**：内置前端 / 后端 / 算法 / 行为面试题库，写下答案后对照参考答案，AI 当场点评打分。
+- **用户共建题库**：注册用户默认可加题，题目默认私有；设为公开后进入「题库广场」供所有人查看、点赞、拉取。
+- **题库广场**：公开题按热度排序（管理员手动值 + 被拉取 + 点赞 + 浏览综合计算），方向 / 难度筛选。
+- **拉取成为自己的**：把广场上的公开题复制一份到自己的题库，独立存在，原作者删题不影响副本。
+- **智能刷题**：写下答案后对照参考答案，AI 当场点评打分。
 - **模拟面试**：AI 扮演面试官，按目标岗位和级别逐轮提问、顺着回答追问，结束后给出结构化总评和评分。
 - **语音对话**：支持语音作答（语音转文字）和面试官语音播报，更接近真实面试；不支持的浏览器自动退回文字输入。
 - **记录回看**：练习与面试记录自动保存，随时回看 AI 反馈与评分。
-- **账号系统**：注册 / 登录，数据按用户隔离。
+- **权限与管理后台**：管理员可开关某用户的加题权限、下架公开题、调整题目热度。
 - **响应式**：移动优先布局，手机和电脑都好用。
 
 ## 🛠 技术栈
@@ -45,6 +48,7 @@ DEEPSEEK_API_KEY=sk-你的真实key      # 必填，AI 功能依赖它
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-chat
 JWT_SECRET=换成一段足够长的随机字符串
+ADMIN_EMAIL=admin@example.com         # 用该邮箱注册即自动成为管理员
 DATABASE_URL="file:./dev.db"
 ```
 
@@ -57,7 +61,7 @@ DATABASE_URL="file:./dev.db"
 
 ```bash
 npx prisma db push      # 创建表
-npm run db:seed         # 写入起步题库
+npm run db:seed         # 写入起步题库（归属「官方题库」系统用户、默认公开）
 ```
 
 ### 4. 启动
@@ -67,6 +71,8 @@ npm run dev
 ```
 
 打开 [http://localhost:3000](http://localhost:3000)，注册账号即可开始。
+
+> **设置管理员**：用 `.env.local` 里 `ADMIN_EMAIL` 指定的邮箱注册，注册后即自动成为管理员；也可对已注册账号执行 `npm run set-admin <email>` 随时提升。管理员可进入 `/admin` 管理用户加题权限和公开题。
 
 ## 📜 常用脚本
 
@@ -78,6 +84,7 @@ npm run dev
 | `npm run typecheck` | TypeScript 类型检查 |
 | `npm run db:push` | 同步 schema 到数据库 |
 | `npm run db:seed` | 写入种子题库 |
+| `npm run set-admin <email>` | 把指定邮箱的已注册用户提升为管理员 |
 
 ## ☁️ 部署上线
 
@@ -108,14 +115,23 @@ src/
 ├── app/
 │   ├── page.tsx                    落地页
 │   ├── login / register            登录注册
-│   ├── practice/                   题库列表 & 单题练习
+│   ├── practice/                   我的题库列表 / 新建 / 单题练习 / 编辑
+│   ├── explore/                    题库广场（公开题按热度排序）
+│   ├── admin/                      管理后台（用户权限 / 公开题管理）
 │   ├── interview/                  面试启动 & 对话页
 │   ├── history/                    记录回看
-│   └── api/                        认证 / 刷题点评 / 面试对话(流式) / 总评
-├── components/                     Navbar / AuthForm / 聊天 / 语音 hooks 等
-├── lib/                            db / auth / deepseek / prompts
-└── middleware.ts                   路由鉴权
+│   └── api/
+│       ├── auth/                   注册 / 登录 / 登出
+│       ├── questions/              建题 / 改删 / 点赞 / 拉取
+│       ├── admin/                  用户权限 / 公开题下架与热度
+│       ├── practice/               刷题点评
+│       └── interview/              面试对话(流式) / 总评
+├── components/                     Navbar / 表单 / 题目操作 / 聊天 / 语音 hooks 等
+├── lib/                            db / auth / session / deepseek / prompts / heat / directions
+└── middleware.ts                   路由鉴权（仅校验登录态，不引入 Prisma）
 prisma/
-├── schema.prisma                   数据模型
+├── schema.prisma                   数据模型（User / Question / Like / View / 记录）
 └── seed.ts                         种子题库
+scripts/
+└── set-admin.ts                    提升管理员脚本
 ```

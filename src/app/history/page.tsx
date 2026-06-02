@@ -27,7 +27,7 @@ export default async function HistoryPage() {
       where: { userId: session.userId },
       orderBy: { createdAt: "desc" },
       take: 50,
-      include: { question: { select: { title: true, category: true } } },
+      include: { question: { select: { title: true, direction: true } } },
     }),
     prisma.interviewSession.findMany({
       where: { userId: session.userId },
@@ -97,7 +97,8 @@ export default async function HistoryPage() {
                       {p.question?.title ?? "（题目已删除）"}
                     </div>
                     <div className="mt-0.5 text-xs text-gray-400">
-                      {p.question?.category} · {formatDate(p.createdAt)}
+                      {p.question?.direction ? `${p.question.direction} · ` : ""}
+                      {formatDate(p.createdAt)}
                     </div>
                   </div>
                   <span

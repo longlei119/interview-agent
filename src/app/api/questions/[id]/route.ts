@@ -1,0 +1,110 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
+import { isValidDirection, isValidDifficulty } from "@/lib/directions";
+
+// 改题：作者本人。可改内容、切换 visibility；manualHeat 仅管理员可调。
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch {
+    return NextResponse.json({ error: "未登录" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const question = await prisma.question.findFirst({
+    where: { id, deletedAt: null },
+  });
+  if (!question) {
+    return NextResponse.json({ error: "题目不存在" }, { status: 404 });
+  }
+
+  const isOwner = question.ownerId === user.id;
+  const isAdmin = user.role === "admin";
+  if (!isOwner && !isAdmin) {
+    return NextResponse.json({ error: "无权修改该题" }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const data: Record<string, unknown> = {};
+
+  // 内容字段：作者本人才能改
+  if (isOwner) {
+    if (body.direction !== undefined) {
+      if (!isValidDirection(body.direction)) {
+        return NextResponse.json({ error: "方向不在可选范围内" }, { status: 400 });
+      }
+      data.direction = body.direction;
+    }
+    if (body.difficulty !== undefined) {
+      if (!isValidDifficulty(body.difficulty)) {
+        return NextResponse.json({ error: "难度不在可选范围内" }, { status: 400 });
+      }
+      data.difficulty = body.difficulty;
+    }
+    if (typeof body.title === "string") data.title = body.title.trim();
+    if (typeof body.body === "string") data.body = body.body.trim();
+    if (typeof body.referenceAnswer === "string")
+      data.referenceAnswer = body.referenceAnswer.trim();
+    if (typeof body.tags === "string") data.tags = body.tags.trim();
+    if (body.visibility === "public" || body.visibility === "private") {
+      data.visibility = body.visibility;
+    }
+  }
+
+  // manualHeat 仅管理员可调
+  if (body.manualHeat !== undefined) {
+    if (!isAdmin) {
+      return NextResponse.json({ error: "只有管理员能调整热度" }, { status: 403 });
+    }
+    const n = Number(body.manualHeat);
+    if (!Number.isFinite(n) || n < 0) {
+      return NextResponse.json({ error: "热度必须是非负数字" }, { status: 400 });
+    }
+    data.manualHeat = Math.floor(n);
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "没有可更新的字段" }, { status: 400 });
+  }
+
+  await prisma.question.update({ where: { id }, data });
+  return NextResponse.json({ ok: true });
+}
+
+// 软删除：作者或管理员。保住别人的练习记录，避免级联误删。
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch {
+    return NextResponse.json({ error: "未登录" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const question = await prisma.question.findFirst({
+    where: { id, deletedAt: null },
+  });
+  if (!question) {
+    return NextResponse.json({ error: "题目不存在" }, { status: 404 });
+  }
+
+  const isOwner = question.ownerId === user.id;
+  const isAdmin = user.role === "admin";
+  if (!isOwner && !isAdmin) {
+    return NextResponse.json({ error: "无权删除该题" }, { status: 403 });
+  }
+
+  await prisma.question.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+  return NextResponse.json({ ok: true });
+}

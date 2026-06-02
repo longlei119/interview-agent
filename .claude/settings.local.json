@@ -12,7 +12,27 @@
       "Bash(gh --version)",
       "Bash(gh auth *)",
       "Bash(git init *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(grep -E '\\\\.env$|\\\\.env\\\\.local|\\\\.db$|node_modules')",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"首页 HTTP %{http_code}\\\\n\" http://localhost:3002/)",
+      "Bash(curl -s -o /dev/null -w \"登录页 HTTP %{http_code}\\\\n\" http://localhost:3002/login)",
+      "Bash(curl -s -o /dev/null -w \"未登录访问/practice（应302跳登录） HTTP %{http_code}\\\\n\" http://localhost:3002/practice)",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=继续 npx prisma db push --force-reset)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3003/login)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -L http://localhost:3003/practice)",
+      "Bash(tasklist)",
+      "Bash(./node_modules/.bin/next build *)",
+      "Bash(./node_modules/.bin/tsx tmp-softdelete.ts)",
+      "Bash(./node_modules/.bin/tsx tmp-cleanup.ts)",
+      "Bash(rm -f tmp-create.json tmp-check.ts tmp-softdelete.ts tmp-cleanup.ts)",
+      "Bash(ls tmp-*.*)",
+      "Bash(git check-ignore *)"
     ]
   }
 }

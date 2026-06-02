@@ -22,11 +22,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "该邮箱已注册" }, { status: 409 });
     }
 
+    // 用 ADMIN_EMAIL 注册的账号自动成为管理员
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const isAdmin = Boolean(adminEmail) && email.trim().toLowerCase() === adminEmail;
+
     const user = await prisma.user.create({
       data: {
         email,
         name,
         passwordHash: await hashPassword(password),
+        role: isAdmin ? "admin" : "user",
       },
     });
 

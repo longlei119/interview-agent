@@ -5,15 +5,28 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 const navItems = [
-  { href: "/practice", label: "刷题" },
+  { href: "/practice", label: "我的题库" },
+  { href: "/explore", label: "题库广场" },
   { href: "/interview", label: "模拟面试" },
   { href: "/history", label: "我的记录" },
 ];
 
-export function Navbar({ userName }: { userName: string | null }) {
+export function Navbar({
+  userName,
+  role,
+}: {
+  userName: string | null;
+  role: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  // 管理员额外多一个后台入口
+  const items =
+    role === "admin"
+      ? [...navItems, { href: "/admin", label: "管理后台" }]
+      : navItems;
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -40,7 +53,7 @@ export function Navbar({ userName }: { userName: string | null }) {
         <nav className="hidden items-center gap-1 md:flex">
           {userName ? (
             <>
-              {navItems.map((item) => (
+              {items.map((item) => (
                 <Link key={item.href} href={item.href} className={linkClass(item.href)}>
                   {item.label}
                 </Link>
@@ -90,7 +103,7 @@ export function Navbar({ userName }: { userName: string | null }) {
           {userName ? (
             <div className="flex flex-col gap-1">
               <span className="px-3 py-2 text-sm text-gray-500">你好，{userName}</span>
-              {navItems.map((item) => (
+              {items.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

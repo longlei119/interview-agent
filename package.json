@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "set-admin": "tsx scripts/set-admin.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {
