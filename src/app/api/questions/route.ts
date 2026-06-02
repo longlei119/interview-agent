@@ -30,18 +30,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "难度不在可选范围内" }, { status: 400 });
   }
 
+  // 新建题目必须挂在具体话题下（未分类只用于拉取/删话题留下的题）
+  if (!topicId) {
+    return NextResponse.json({ error: "请选择一个话题分类" }, { status: 400 });
+  }
+  // 指定话题必须是自己的
+  const topic = await prisma.topic.findFirst({
+    where: { id: topicId, userId: user.id },
+  });
+  if (!topic) {
+    return NextResponse.json({ error: "话题不存在" }, { status: 404 });
+  }
+
   // 方向 = 个人方向（未设置则归「其他」）
   const direction = isValidDirection(user.direction ?? "") ? user.direction! : "其他";
-
-  // 指定话题必须是自己的
-  if (topicId) {
-    const topic = await prisma.topic.findFirst({
-      where: { id: topicId, userId: user.id },
-    });
-    if (!topic) {
-      return NextResponse.json({ error: "话题不存在" }, { status: 404 });
-    }
-  }
 
   // 管理员建题默认带较高手动热度，让精选题天然靠前
   const manualHeat = user.role === "admin" ? ADMIN_DEFAULT_MANUAL_HEAT : 0;
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
   const question = await prisma.question.create({
     data: {
       ownerId: user.id,
-      topicId: topicId ?? null,
+      topicId,
       direction,
       difficulty,
       title: String(title).trim(),

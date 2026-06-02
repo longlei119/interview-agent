@@ -27,6 +27,8 @@ interface Props {
   topicOptions: TopicOption[];
   // 个人方向，仅用于展示提示（方向由后端按个人方向写入）
   direction: string;
+  // 新建时要求必须选具体话题（不给「未分类」选项）；编辑时保留「未分类」
+  requireTopic?: boolean;
 }
 
 function makeEmpty(topicId: string | null): QuestionFormValues {
@@ -45,6 +47,7 @@ export function QuestionForm({
   initial,
   topicOptions,
   direction,
+  requireTopic = false,
 }: Props) {
   const router = useRouter();
   const isEdit = Boolean(questionId);
@@ -63,6 +66,10 @@ export function QuestionForm({
     setError("");
     if (!values.title.trim() || !values.body.trim()) {
       setError("请填写标题和题目内容");
+      return;
+    }
+    if (requireTopic && !values.topicId) {
+      setError("请选择一个话题分类");
       return;
     }
     setLoading(true);
@@ -113,14 +120,20 @@ export function QuestionForm({
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
-            话题分类
+            话题分类{requireTopic && <span className="text-red-500"> *</span>}
           </label>
           <select
             value={values.topicId ?? ""}
             onChange={(e) => set("topicId", e.target.value || null)}
             className={inputClass}
           >
-            <option value="">未分类</option>
+            {requireTopic ? (
+              <option value="" disabled>
+                请选择话题分类…
+              </option>
+            ) : (
+              <option value="">未分类</option>
+            )}
             {topicOptions.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.label}

@@ -93,11 +93,9 @@ export default async function PracticePage({
       ? path[path.length - 1].name
       : "全部题目";
 
-  // 在当前话题下新建题目的链接（带 topic 预选）
-  const newHref =
-    activeTopicId && activeTopicId !== "none"
-      ? `/practice/new?topic=${activeTopicId}`
-      : "/practice/new";
+  // 题目必须挂在具体话题节点下，只有选中具体话题（非「全部」「未分类」）时才能新建
+  const canCreateHere = user.canCreate && !!activeTopicId && activeTopicId !== "none";
+  const newHref = canCreateHere ? `/practice/new?topic=${activeTopicId}` : "";
 
   const chipClass = (active: boolean) =>
     `rounded-full px-3 py-1 text-sm transition-colors ${
@@ -154,7 +152,7 @@ export default async function PracticePage({
               )}
               <span className="ml-1 text-gray-400">（{questions.length} 题）</span>
             </div>
-            {user.canCreate && (
+            {canCreateHere && (
               <Link
                 href={newHref}
                 className="shrink-0 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
@@ -182,13 +180,27 @@ export default async function PracticePage({
               <p className="text-gray-400">
                 {difficulty ? "没有符合筛选条件的题目" : "这里还没有题目"}
               </p>
-              {user.canCreate && (
-                <Link
-                  href={newHref}
-                  className="mt-3 inline-block text-sm font-medium text-brand-600 hover:underline"
-                >
-                  去新建一道 →
-                </Link>
+              {!difficulty && user.canCreate && (
+                canCreateHere ? (
+                  <Link
+                    href={newHref}
+                    className="mt-3 inline-block text-sm font-medium text-brand-600 hover:underline"
+                  >
+                    在「{activeName}」下新建一道 →
+                  </Link>
+                ) : isUnclassified ? (
+                  <p className="mt-2 text-xs text-gray-400">
+                    未分类里是拉取或删话题后留下的题，无法直接新建。
+                  </p>
+                ) : tree.length === 0 ? (
+                  <p className="mt-2 text-xs text-gray-400">
+                    先在左侧「+ 加根话题」建一个分类，再到分类下加题。
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs text-gray-400">
+                    在左侧选一个话题分类，即可在该分类下新建题目。
+                  </p>
+                )
               )}
             </div>
           ) : (
