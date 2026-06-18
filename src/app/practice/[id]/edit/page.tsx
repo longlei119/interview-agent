@@ -52,7 +52,7 @@ export default async function EditQuestionPage({
         <Icon name="arrow-left" size={16} />
         返回题目
       </Link>
-      <h1 className="mb-6 text-2xl font-bold text-ink">编辑题目</h1>
+      <h1 className="mb-6 font-serif text-2xl font-bold text-ink">编辑题目</h1>
       <Card padded>
         <QuestionForm
           questionId={question.id}

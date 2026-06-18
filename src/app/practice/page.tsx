@@ -109,7 +109,7 @@ export default async function PracticePage({
     <div className="animate-fade-in">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink">我的题库</h1>
+          <h1 className="font-serif text-2xl font-bold text-ink">我的题库</h1>
           <p className="mt-1 text-sm text-muted">按话题分类整理你自己的练习题。</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -209,10 +209,7 @@ export default async function PracticePage({
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {questions.map((q) => (
-                <div
-                  key={q.id}
-                  className="group relative rounded-xl border border-line bg-surface p-4 shadow-card transition-all duration-150 ease-out-soft hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-hover"
-                >
+                <Card key={q.id} hover className="group relative p-4">
                   <Link href={`/practice/${q.id}`} className="block">
                     <div className="mb-2 flex flex-wrap items-center gap-1.5">
                       <Badge difficulty={q.difficulty as "简单" | "中等" | "困难"} />
@@ -251,7 +248,7 @@ export default async function PracticePage({
                       variant="icon"
                     />
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           )}

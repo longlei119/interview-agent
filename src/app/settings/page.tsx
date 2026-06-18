@@ -22,10 +22,10 @@ export default async function SettingsPage() {
 
   return (
     <div className="animate-fade-in max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-ink mb-1">设置</h1>
-      <p className="text-sm text-muted mb-6">管理分享码和查看同步记录。</p>
+      <h1 className="font-serif text-2xl font-bold tracking-tight text-ink mb-1">设置</h1>
+      <p className="text-sm text-muted mb-8">管理分享码和查看同步记录。</p>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         <ShareCodeCard
           shareCode={full?.shareCode ?? null}
           shareCodeSetAt={full?.shareCodeSetAt?.toISOString() ?? null}

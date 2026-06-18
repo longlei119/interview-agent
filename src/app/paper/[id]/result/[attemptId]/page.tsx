@@ -67,10 +67,10 @@ export default async function PaperResultPage({
   const avgScore = questions.length > 0 ? Math.round(totalScore / questions.length) : 0;
   const scoreColor =
     avgScore >= 80
-      ? "text-emerald-600"
+      ? "text-green"
       : avgScore >= 60
         ? "text-amber-600"
-        : "text-red-600";
+        : "text-brand-500";
 
   return (
     <div className="mx-auto max-w-3xl animate-fade-in">
@@ -82,7 +82,7 @@ export default async function PaperResultPage({
         返回试卷列表
       </Link>
 
-      <h1 className="mb-1 text-2xl font-bold text-ink">
+      <h1 className="mb-1 font-serif text-2xl font-bold text-ink">
         {attempt.paper.title} · 作答结果
       </h1>
       <p className="mb-5 text-sm text-muted">

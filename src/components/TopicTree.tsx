@@ -15,8 +15,8 @@ interface Props {
 
 const VIS_OPTIONS = [
   { value: "private", label: "私有", icon: "eye" as const, color: "text-muted" },
-  { value: "public", label: "公开", icon: "globe" as const, color: "text-emerald-500" },
-  { value: "force_off", label: "强制关闭", icon: "x" as const, color: "text-red-500" },
+  { value: "public", label: "公开", icon: "globe" as const, color: "text-green" },
+  { value: "force_off", label: "强制关闭", icon: "x" as const, color: "text-brand-500" },
 ];
 
 export function TopicTree({ tree, activeId, unclassifiedCount, countMap }: Props) {
@@ -186,10 +186,10 @@ function TopicItem({
         >
           {node.name}
           {node.visibility === "public" && (
-            <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" title="已公开" />
+            <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-green" title="已公开" />
           )}
           {node.visibility === "force_off" && (
-            <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-red-400" title="强制关闭" />
+            <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-brand-500" title="强制关闭" />
           )}
           <span className={`ml-1.5 text-xs ${active ? "text-brand-400" : "text-muted"}`}>
             {countMap[node.id] ?? 0}
@@ -252,7 +252,7 @@ function TopicItem({
               onClick={() => onRemove(node.id, node.name)}
               disabled={busy}
               title="删除"
-              className="rounded p-1 hover:bg-red-100 hover:text-red-600"
+              className="rounded p-1 hover:bg-brand-50 hover:text-brand-500"
             >
               <Icon name="trash" size={12} />
             </button>

@@ -193,7 +193,7 @@ export function ExamPanel({ paperId, paperTitle, timeLimit, questions }: Props) 
             <span
               className={`inline-flex items-center gap-1 rounded-md px-3 py-1 text-sm font-bold tabular-nums ${
                 timerDanger
-                  ? "bg-red-50 text-red-700 animate-pulse"
+                  ? "bg-brand-25 text-brand-700 animate-pulse"
                   : timerWarning
                     ? "bg-amber-50 text-amber-700"
                     : "bg-canvas text-ink"
@@ -252,7 +252,7 @@ export function ExamPanel({ paperId, paperTitle, timeLimit, questions }: Props) 
                     ? "scale-125 bg-brand-500"
                     : answers[qq.id]?.trim()
                       ? "bg-brand-400"
-                      : "bg-slate-300 hover:bg-slate-400"
+                      : "bg-line hover:bg-muted"
                 }`}
                 title={`第 ${i + 1} 题`}
               />

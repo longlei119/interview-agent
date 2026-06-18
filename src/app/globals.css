@@ -3,9 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --background: #f5f7fb;
-  --foreground: #0f172a;
-  --brand: #3b6cff;
+  --background: #f6f1e7;
+  --foreground: #1c1a17;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --space-section: 2rem;
+  --max-w-content: 68rem;
 }
 
 html,
@@ -16,15 +21,15 @@ body {
 
 body {
   color: var(--foreground);
-  background:
-    linear-gradient(180deg, #fafbff 0%, #f5f7fb 240px) no-repeat,
-    var(--background);
+  background: var(--background);
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(214, 73, 47, 0.04), transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(184, 138, 62, 0.06), transparent 45%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", "PingFang SC",
-    "Microsoft YaHei", sans-serif;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-family: var(--font-sans), Inter, system-ui, -apple-system, "Segoe UI",
+    "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 * {
@@ -33,7 +38,7 @@ body {
 
 /* 统一键盘聚焦轮廓 */
 :focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid #d6492f;
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -44,25 +49,25 @@ a:focus-visible {
 
 /* 选区配色 */
 ::selection {
-  background: #dbe7ff;
-  color: #1e3791;
+  background: rgba(214, 73, 47, 0.12);
+  color: #7c2314;
 }
 
 /* 滚动条 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
+  scrollbar-color: #ddd5c4 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.3);
-  border-radius: 4px;
+  background: #ddd5c4;
+  border-radius: 8px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.5);
+  background: #c5bcab;
 }
 *::-webkit-scrollbar-track {
   background: transparent;
@@ -81,16 +86,16 @@ a:focus-visible {
 .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #94a3b8;
+  color: #8c867a;
   pointer-events: none;
   height: 0;
 }
 
-/* 富文本答案阅读排版：段落、标题、列表、代码、引用、表格、链接 */
+/* 富文本答案阅读排版 */
 .rich-content {
   font-size: 14px;
   line-height: 1.75;
-  color: #1e293b;
+  color: #4a463f;
   word-break: break-word;
 }
 .rich-content > *:first-child {
@@ -108,13 +113,13 @@ a:focus-visible {
 .rich-content h4 {
   font-weight: 600;
   line-height: 1.4;
-  color: #0f172a;
+  color: #1c1a17;
   margin: 1.4em 0 0.6em;
 }
 .rich-content h1 {
   font-size: 1.35em;
   padding-bottom: 0.3em;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #ddd5c4;
 }
 .rich-content h2 {
   font-size: 1.2em;
@@ -124,7 +129,7 @@ a:focus-visible {
 }
 .rich-content h4 {
   font-size: 1em;
-  color: #475569;
+  color: #4a463f;
 }
 .rich-content ul,
 .rich-content ol {
@@ -141,47 +146,49 @@ a:focus-visible {
   margin: 0.25em 0;
 }
 .rich-content li::marker {
-  color: #94a3b8;
+  color: #8c867a;
 }
 .rich-content li > p {
   margin: 0 0 0.25em;
 }
 .rich-content a {
-  color: #3b6cff;
+  color: #d6492f;
   text-decoration: none;
-  border-bottom: 1px solid rgba(59, 108, 255, 0.3);
+  border-bottom: 1px solid rgba(214, 73, 47, 0.3);
   transition: color 150ms, border-color 150ms;
 }
 .rich-content a:hover {
-  color: #1e3791;
-  border-bottom-color: #1e3791;
+  color: #7c2314;
+  border-bottom-color: #7c2314;
 }
 .rich-content strong {
   font-weight: 600;
-  color: #0f172a;
+  color: #1c1a17;
 }
 .rich-content em {
   font-style: italic;
 }
 .rich-content code {
-  font-family: "JetBrains Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
+  font-family: "Space Mono", "JetBrains Mono", "Fira Code", "SFMono-Regular",
+    Consolas, monospace;
   font-size: 0.88em;
-  background: #f1f5f9;
-  color: #be185d;
+  background: #f6f1e7;
+  color: #d6492f;
   padding: 1px 6px;
   border-radius: 4px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #ddd5c4;
 }
 .rich-content pre {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #1c1a17;
+  color: #efe9dc;
   padding: 14px 18px;
   border-radius: 8px;
   overflow-x: auto;
   margin: 0.8em 0 1em;
   font-size: 13px;
   line-height: 1.6;
-  font-family: "JetBrains Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
+  font-family: "Space Mono", "JetBrains Mono", "Fira Code", "SFMono-Regular",
+    Consolas, monospace;
 }
 .rich-content pre code {
   background: none;
@@ -194,10 +201,10 @@ a:focus-visible {
 .rich-content blockquote {
   margin: 0.9em 0;
   padding: 0.4em 0 0.4em 14px;
-  border-left: 3px solid #3b6cff;
-  background: #f5f7fb;
+  border-left: 3px solid #d6492f;
+  background: #f6f1e7;
   border-radius: 0 6px 6px 0;
-  color: #475569;
+  color: #4a463f;
 }
 .rich-content blockquote p {
   margin: 0;
@@ -211,7 +218,7 @@ a:focus-visible {
 .rich-content hr {
   margin: 1.5em 0;
   border: none;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid #ddd5c4;
 }
 .rich-content img {
   max-width: 100%;
@@ -228,16 +235,16 @@ a:focus-visible {
   display: block;
 }
 .rich-content thead {
-  background: #f1f5f9;
+  background: #f6f1e7;
 }
 .rich-content th,
 .rich-content td {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #ddd5c4;
   padding: 8px 12px;
   text-align: left;
   vertical-align: top;
 }
 .rich-content th {
   font-weight: 600;
-  color: #0f172a;
+  color: #1c1a17;
 }

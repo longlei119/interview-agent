@@ -37,7 +37,7 @@ export default async function PublicProfilePage({
   return (
     <div className="animate-fade-in max-w-3xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-ink">{data.user.name} 的题库</h1>
+        <h1 className="font-serif text-2xl font-bold text-ink">{data.user.name} 的题库</h1>
         <p className="mt-1 text-sm text-muted">
           公开 {data.stats.topicCount} 个目录 · {data.stats.questionCount} 道题 · {data.stats.paperCount} 张试卷
         </p>

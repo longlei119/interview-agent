@@ -388,7 +388,7 @@ export function AiModelConfigPanel() {
                         </button>
                         <button
                           onClick={() => remove(item.id)}
-                          className={`${linkBtn} text-red-600 hover:bg-red-50`}
+                          className={`${linkBtn} text-brand-500 hover:bg-brand-25`}
                         >
                           <Icon name="trash" size={12} />
                           删除
@@ -402,7 +402,7 @@ export function AiModelConfigPanel() {
               <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-canvas px-3 py-2 text-xs text-muted">
                 <Icon name="info" size={12} />
                 环境变量兜底：
-                <span className={envFallbacks[role]?.configured ? "text-emerald-600" : "text-amber-600"}>
+                <span className={envFallbacks[role]?.configured ? "text-green" : "text-amber-600"}>
                   {envFallbacks[role]?.configured ? "已配置" : "未配置"}
                 </span>
                 {envFallbacks[role]?.configured && (

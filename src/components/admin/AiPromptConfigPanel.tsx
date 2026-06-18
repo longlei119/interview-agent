@@ -320,7 +320,7 @@ export function AiPromptConfigPanel() {
                         </button>
                         <button
                           onClick={() => reset(item)}
-                          className={`${linkBtn} text-red-600 hover:bg-red-50`}
+                          className={`${linkBtn} text-brand-500 hover:bg-brand-25`}
                         >
                           <Icon name="history" size={12} />
                           恢复默认

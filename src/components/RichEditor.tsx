@@ -286,7 +286,7 @@ export function RichEditor({
       )}
 
       {formatError && (
-        <div className="border-t border-red-100 bg-red-50 px-3 py-1.5 text-xs text-red-700">
+        <div className="border-t border-red-100 bg-brand-25 px-3 py-1.5 text-xs text-brand-700">
           {formatError}
         </div>
       )}

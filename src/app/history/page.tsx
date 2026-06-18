@@ -40,7 +40,7 @@ export default async function HistoryPage() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold text-ink">我的记录</h1>
+      <h1 className="font-serif text-2xl font-bold text-ink">我的记录</h1>
       <p className="mb-6 mt-1 text-sm text-muted">回看你的刷题点评和模拟面试总评。</p>
 
       <section className="mb-8">

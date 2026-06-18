@@ -129,9 +129,9 @@ export function QuestionActions({
               size="sm"
               disabled={busy}
               leftIcon={
-                <Icon name={isPublic ? "eye" : "check"} size={14} className={isPublic ? "text-emerald-600" : ""} />
+                <Icon name={isPublic ? "eye" : "check"} size={14} className={isPublic ? "text-green" : ""} />
               }
-              className={isPublic ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50" : ""}
+              className={isPublic ? "border-green text-green hover:bg-[rgba(95,122,77,0.15)]" : ""}
             >
               {isPublic ? "已公开 · 转私有" : "设为公开"}
             </Button>

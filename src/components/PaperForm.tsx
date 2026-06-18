@@ -210,7 +210,7 @@ export function PaperForm({ mode, paperId, userQuestions, topics, initial }: Pro
                 onChange={(e) => setIsPublic(e.target.checked)}
                 className="h-4 w-4 rounded border-line text-brand-500 focus:ring-brand-400"
               />
-              <Icon name="globe" size={14} className={isPublic ? "text-emerald-500" : "text-muted"} />
+              <Icon name="globe" size={14} className={isPublic ? "text-green" : "text-muted"} />
               公开试卷
             </label>
           </div>

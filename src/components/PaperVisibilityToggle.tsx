@@ -39,7 +39,7 @@ export function PaperVisibilityToggle({
       title={isPublic ? "设为私有" : "设为公开"}
       className={`rounded-lg p-1.5 text-xs transition-colors ${
         isPublic
-          ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+          ? "bg-[rgba(95,122,77,0.15)] text-green hover:bg-[rgba(95,122,77,0.25)]"
           : "text-muted hover:bg-brand-50 hover:text-brand-600"
       }`}
     >

@@ -12,12 +12,12 @@ interface NavItem {
   icon: IconName;
 }
 
-const navItems: NavItem[] = [
-  { href: "/practice", label: "我的题库", icon: "book" },
-  { href: "/paper", label: "我的试卷", icon: "file" },
-  { href: "/explore", label: "题库广场", icon: "compass" },
-  { href: "/interview", label: "模拟面试", icon: "mic" },
-  { href: "/history", label: "我的记录", icon: "history" },
+const mainNav: NavItem[] = [
+  { href: "/practice", label: "题库", icon: "book" },
+  { href: "/paper", label: "试卷", icon: "file" },
+  { href: "/explore", label: "广场", icon: "compass" },
+  { href: "/interview", label: "面试", icon: "mic" },
+  { href: "/history", label: "记录", icon: "history" },
 ];
 
 export function Navbar({
@@ -34,95 +34,112 @@ export function Navbar({
   const pathname = usePathname();
   const router = useRouter();
 
-  const items: (NavItem & { admin?: boolean })[] = [
-    ...navItems,
-    ...(canCreate
-      ? [{ href: "/practice/import", label: "导入题目", icon: "download" as IconName }]
-      : []),
-    ...(role === "admin"
-      ? [{ href: "/admin", label: "管理后台", icon: "settings" as IconName, admin: true }]
-      : []),
-  ];
-
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
     router.refresh();
   }
 
-  // 取最长匹配的项作为高亮项，避免 /practice/import 同时点亮「我的题库」和「导入题目」
-  const activeHref = [...items.map((i) => i.href), "/login", "/register"]
+  // 取最长匹配的项作为高亮项
+  const candidateHrefs = [
+    ...mainNav.map((i) => i.href),
+    "/practice/import",
+    "/admin",
+    "/settings",
+    "/login",
+    "/register",
+  ];
+  const activeHref = candidateHrefs
     .filter((h) => pathname === h || pathname.startsWith(h + "/"))
     .sort((a, b) => b.length - a.length)[0];
 
   const linkClass = (href: string) =>
-    `inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 ease-out-soft ${
+    `inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors duration-150 ease-out-soft ${
       href === activeHref
-        ? "bg-brand-50 text-brand-700"
+        ? "bg-ink text-surface"
         : "text-muted hover:bg-canvas hover:text-ink"
     }`;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line/80 bg-surface/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
+    <header className="sticky top-0 z-30 border-b border-line bg-canvas-deep/86 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4">
+        {/* 左：品牌 */}
         <Link
           href="/"
-          className="flex items-center gap-2 font-semibold text-ink transition-colors hover:text-brand-600"
+          className="flex shrink-0 items-center gap-2.5 font-serif font-bold text-ink transition-colors hover:text-brand-500"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-brand-500 text-white shadow-soft">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-ink text-surface shadow-soft ring-1 ring-inset ring-brand-500">
             <Icon name="target" size={18} />
           </span>
-          <span className="hidden text-base sm:inline">AI 面试助手</span>
+          <span className="hidden text-base tracking-tight sm:inline">AI 面试助手</span>
         </Link>
 
-        {/* 桌面端导航 */}
-        <nav className="hidden items-center gap-0.5 md:flex">
-          {userName ? (
-            <>
-              {items.map((item) => (
-                <Link key={item.href} href={item.href} className={linkClass(item.href)}>
-                  <Icon name={item.icon} size={16} />
-                  {item.label}
-                </Link>
-              ))}
-              <button
-                onClick={() => setSyncOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-50"
-              >
-                <Icon name="share" size={16} />
-                同步他人题库
-              </button>
-              <div className="ml-2 flex items-center gap-1 border-l border-line pl-2">
-                <Link href="/settings" className={linkClass("/settings")}>
-                  <Icon name="settings" size={16} />
-                </Link>
-                <span className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted">
-                  <Icon name="user" size={14} />
-                  {userName}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-red-50 hover:text-red-600"
-                  title="退出登录"
-                >
-                  <Icon name="logout" size={14} />
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <Link href="/login" className={linkClass("/login")}>
-                登录
+        {/* 中：主导航（桌面端） */}
+        {userName && (
+          <nav className="hidden flex-1 items-center justify-center gap-0.5 md:flex">
+            {mainNav.map((item) => (
+              <Link key={item.href} href={item.href} className={linkClass(item.href)}>
+                <Icon name={item.icon} size={15} />
+                {item.label}
               </Link>
-              <Link
-                href="/register"
-                className="ml-1 inline-flex h-9 items-center rounded-lg bg-brand-500 px-4 text-sm font-medium text-white shadow-soft transition-all hover:bg-brand-600 hover:shadow-hover active:scale-[0.98]"
-              >
-                注册
+            ))}
+          </nav>
+        )}
+
+        {/* 右：工具区 + 用户区（桌面端） */}
+        {userName ? (
+          <div className="hidden items-center gap-1 md:flex">
+            {canCreate && (
+              <Link href="/practice/import" className={linkClass("/practice/import")}>
+                <Icon name="download" size={15} />
+                导入
               </Link>
-            </>
-          )}
-        </nav>
+            )}
+            {role === "admin" && (
+              <Link href="/admin" className={linkClass("/admin")}>
+                <Icon name="settings" size={15} />
+                后台
+              </Link>
+            )}
+            <button
+              onClick={() => setSyncOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-brand-500 transition-colors hover:bg-brand-25"
+              title="输入分享码同步他人题库"
+            >
+              <Icon name="share" size={15} />
+              同步
+            </button>
+            <div className="mx-1 h-5 w-px bg-line" />
+            <Link href="/settings" className={linkClass("/settings")}>
+              <Icon name="settings" size={15} />
+              设置
+            </Link>
+            <span className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted">
+              <Icon name="user" size={14} />
+              {userName}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center rounded-lg p-1.5 text-muted transition-colors hover:bg-brand-25 hover:text-brand-500"
+              title="退出登录"
+              aria-label="退出登录"
+            >
+              <Icon name="logout" size={15} />
+            </button>
+          </div>
+        ) : (
+          <div className="hidden items-center gap-1 md:flex">
+            <Link href="/login" className={linkClass("/login")}>
+              登录
+            </Link>
+            <Link
+              href="/register"
+              className="ml-1 inline-flex h-9 items-center rounded-lg bg-ink px-4 text-sm font-medium text-surface shadow-soft transition-all hover:bg-ink-soft hover:shadow-hover active:scale-[0.98]"
+            >
+              注册
+            </Link>
+          </div>
+        )}
 
         {/* 移动端汉堡按钮 */}
         <button
@@ -139,6 +156,7 @@ export function Navbar({
         <nav className="border-t border-line bg-surface px-4 py-2 md:hidden">
           {userName ? (
             <div className="flex flex-col gap-0.5">
+              {/* 用户区 */}
               <div className="flex items-center justify-between px-3 py-2">
                 <span className="flex items-center gap-1.5 text-xs text-muted">
                   <Icon name="user" size={14} />
@@ -149,14 +167,15 @@ export function Navbar({
                     setOpen(false);
                     handleLogout();
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-brand-500 hover:bg-brand-25"
                 >
                   <Icon name="logout" size={14} />
                   退出
                 </button>
               </div>
               <div className="my-1 h-px bg-line" />
-              {items.map((item) => (
+              {/* 主导航 */}
+              {mainNav.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -164,19 +183,43 @@ export function Navbar({
                   onClick={() => setOpen(false)}
                 >
                   <Icon name={item.icon} size={16} />
-                  {item.label}
+                  {item.label === "题库" ? "我的题库" : item.label === "试卷" ? "我的试卷" : item.label === "广场" ? "题库广场" : item.label === "面试" ? "模拟面试" : "我的记录"}
                 </Link>
               ))}
+              <div className="my-1 h-px bg-line" />
+              {/* 工具区 */}
+              {canCreate && (
+                <Link
+                  href="/practice/import"
+                  className={linkClass("/practice/import")}
+                  onClick={() => setOpen(false)}
+                >
+                  <Icon name="download" size={16} />
+                  导入题目
+                </Link>
+              )}
+              {role === "admin" && (
+                <Link
+                  href="/admin"
+                  className={linkClass("/admin")}
+                  onClick={() => setOpen(false)}
+                >
+                  <Icon name="settings" size={16} />
+                  管理后台
+                </Link>
+              )}
               <button
                 onClick={() => {
                   setOpen(false);
                   setSyncOpen(true);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-50"
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-500 transition-colors hover:bg-brand-25"
               >
                 <Icon name="share" size={16} />
                 同步他人题库
               </button>
+              <div className="my-1 h-px bg-line" />
+              {/* 设置 */}
               <Link
                 href="/settings"
                 className={linkClass("/settings")}

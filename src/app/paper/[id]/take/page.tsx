@@ -70,7 +70,7 @@ export default async function TakePaperPage({
         <Icon name="arrow-left" size={16} />
         返回试卷列表
       </Link>
-      <h1 className="mb-1 text-2xl font-bold text-ink">{paper.title}</h1>
+      <h1 className="mb-1 font-serif text-2xl font-bold text-ink">{paper.title}</h1>
       <p className="mb-5 text-sm text-muted">
         {questions.length} 题
         {paper.timeLimit ? ` · 限时 ${paper.timeLimit} 分钟` : " · 不限时"}

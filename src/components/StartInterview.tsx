@@ -50,23 +50,23 @@ export function StartInterview() {
   const optionClass = (active: boolean) =>
     `rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-150 ease-out-soft ${
       active
-        ? "border-brand-500 bg-brand-50 text-brand-700 shadow-soft"
+        ? "border-brand-500 bg-brand-25 text-brand-700 shadow-soft"
         : "border-line bg-surface text-muted hover:border-brand-300 hover:text-ink"
     }`;
 
   return (
-    <div className="mx-auto max-w-lg animate-fade-in">
-      <Card padded>
-        <div className="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-          <Icon name="mic" size={22} />
+    <div className="mx-auto max-w-2xl animate-fade-in">
+      <Card padded className="p-8">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-brand-25 text-brand-500">
+          <Icon name="mic" size={24} />
         </div>
-        <h1 className="mt-4 text-2xl font-bold text-ink">开始模拟面试</h1>
+        <h1 className="mt-4 font-serif text-2xl font-bold text-ink">开始模拟面试</h1>
         <p className="mt-1 text-sm text-muted">
           选择目标岗位和级别，AI 面试官会据此调整问题难度，并支持语音对话。
         </p>
 
-        <div className="mt-6">
-          <label className="mb-2 block text-sm font-semibold text-ink">目标岗位</label>
+        <div className="mt-7">
+          <label className="mb-2.5 block text-sm font-semibold text-ink">目标岗位</label>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {ROLES.map((r) => (
               <button
@@ -81,7 +81,7 @@ export function StartInterview() {
         </div>
 
         <div className="mt-5">
-          <label className="mb-2 block text-sm font-semibold text-ink">目标级别</label>
+          <label className="mb-2.5 block text-sm font-semibold text-ink">目标级别</label>
           <div className="flex gap-2">
             {LEVELS.map((l) => (
               <button
@@ -102,7 +102,7 @@ export function StartInterview() {
           loading={loading}
           fullWidth
           size="lg"
-          className="mt-6"
+          className="mt-7"
           leftIcon={!loading ? <Icon name="play" size={18} /> : undefined}
         >
           {loading ? "面试官准备中..." : "开始面试"}

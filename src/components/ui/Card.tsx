@@ -16,7 +16,7 @@ export function Card({
     <div
       className={`rounded-xl border border-line bg-surface shadow-card ${
         hover
-          ? "transition-all duration-150 ease-out-soft hover:-translate-y-0.5 hover:shadow-hover"
+          ? "transition-all duration-200 ease-out-soft hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-hover"
           : ""
       } ${padded ? "p-6" : ""} ${className}`}
       {...rest}
@@ -39,12 +39,12 @@ export function CardHeader({ title, desc, action, icon, className = "" }: CardHe
     <div className={`flex items-start justify-between gap-3 ${className}`}>
       <div className="flex items-start gap-3">
         {icon && (
-          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-500">
             {icon}
           </div>
         )}
         <div>
-          <h2 className="text-base font-semibold text-ink">{title}</h2>
+          <h2 className="font-serif text-base font-semibold text-ink">{title}</h2>
           {desc && <p className="mt-0.5 text-sm text-muted">{desc}</p>}
         </div>
       </div>

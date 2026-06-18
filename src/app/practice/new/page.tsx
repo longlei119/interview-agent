@@ -77,7 +77,7 @@ export default async function NewQuestionPage({
         <Icon name="arrow-left" size={16} />
         返回我的题库
       </Link>
-      <h1 className="text-2xl font-bold text-ink">新建题目</h1>
+      <h1 className="font-serif text-2xl font-bold text-ink">新建题目</h1>
       <p className="mb-6 mt-1 text-sm text-muted">
         题目默认私有，只有你自己能看到。创建后可在详情页设为公开，分享到题库广场。
       </p>

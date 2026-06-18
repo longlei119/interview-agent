@@ -73,7 +73,7 @@ export function SyncHistoryList({ records }: { records: SyncRecordRow[] }) {
                     </span>
                   )}
                   {r.status === "failed" && (
-                    <span className="text-red-500">{r.error || "失败"}</span>
+                    <span className="text-brand-500">{r.error || "失败"}</span>
                   )}
                   {r.status === "pending" && <span className="text-muted">等待执行</span>}
                   {r.status === "running" && <span className="text-muted">正在同步</span>}

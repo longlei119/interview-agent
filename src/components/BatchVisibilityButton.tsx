@@ -39,7 +39,7 @@ export function BatchVisibilityButton({
     <button
       onClick={setPublic}
       disabled={busy}
-      className="inline-flex h-8 items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-60"
+      className="inline-flex h-8 items-center gap-1 rounded-lg border border-green bg-[rgba(95,122,77,0.15)] px-3 text-xs font-medium text-green transition-colors hover:bg-[rgba(95,122,77,0.25)] disabled:opacity-60"
     >
       {busy ? <Spinner size="sm" /> : <Icon name="globe" size={13} />}
       一键公开

@@ -208,7 +208,7 @@ function ResultPanel({ result }: { result: ImportResult }) {
     <div className="mt-5 animate-fade-in space-y-3 rounded-xl border border-line bg-surface p-5 shadow-card">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
         <span className="inline-flex items-center gap-1 font-semibold text-ink">
-          <Icon name="check" size={14} className="text-emerald-600" />
+          <Icon name="check" size={14} className="text-green" />
           成功导入 {result.created} 道
         </span>
         {result.answersGenerated > 0 && (
@@ -222,7 +222,7 @@ function ResultPanel({ result }: { result: ImportResult }) {
             新建分类：{result.newTopics.map((t) => t.name).join("、")}
           </span>
         )}
-        {result.failed > 0 && <span className="text-red-600">失败 {result.failed} 道</span>}
+        {result.failed > 0 && <span className="text-brand-500">失败 {result.failed} 道</span>}
       </div>
 
       <ul className="space-y-1.5 text-sm text-ink">
@@ -241,7 +241,7 @@ function ResultPanel({ result }: { result: ImportResult }) {
       </ul>
 
       {result.errors.length > 0 && (
-        <ul className="space-y-1 border-t border-line pt-2 text-xs text-red-600">
+        <ul className="space-y-1 border-t border-line pt-2 text-xs text-brand-500">
           {result.errors.map((e, i) => (
             <li key={i}>
               {e.title}：{e.message}

@@ -36,7 +36,7 @@ export default async function NewPaperPage() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="mb-5 text-2xl font-bold text-ink">创建试卷</h1>
+      <h1 className="mb-5 font-serif text-2xl font-bold text-ink">创建试卷</h1>
       <PaperForm mode="create" userQuestions={questionOptions} topics={tree} />
     </div>
   );

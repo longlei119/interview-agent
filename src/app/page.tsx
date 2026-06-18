@@ -36,7 +36,7 @@ export default async function HomePage() {
           <Icon name="sparkles" size={14} className="text-brand-500" />
           AI 驱动 · 真实面试节奏
         </div>
-        <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
+        <h1 className="mt-5 font-serif text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
           像真实面试一样
           <span className="bg-gradient-to-r from-brand-500 to-brand-700 bg-clip-text text-transparent">
             准备面试
@@ -85,7 +85,7 @@ export default async function HomePage() {
           </div>
           <Link
             href={session ? "/explore" : "/register"}
-            className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-ink px-5 text-sm font-semibold text-white transition-all hover:bg-slate-800 active:scale-[0.98]"
+            className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-ink px-5 text-sm font-semibold text-surface transition-all hover:bg-ink-soft active:scale-[0.98]"
           >
             {session ? "逛题库广场" : "立即注册"}
             <Icon name="arrow-right" size={16} />

@@ -61,7 +61,7 @@ export default async function EditPaperPage({
         <Icon name="arrow-left" size={16} />
         返回试卷列表
       </Link>
-      <h1 className="mb-5 text-2xl font-bold text-ink">编辑试卷</h1>
+      <h1 className="mb-5 font-serif text-2xl font-bold text-ink">编辑试卷</h1>
       <PaperForm
         mode="edit"
         paperId={paper.id}

@@ -9,7 +9,7 @@ interface ErrorBannerProps {
 export function ErrorBanner({ children, className = "" }: ErrorBannerProps) {
   return (
     <div
-      className={`flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 ${className}`}
+      className={`flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-25 px-3 py-2 text-sm text-brand-700 ${className}`}
     >
       <Icon name="alert" size={16} className="mt-0.5 shrink-0" />
       <div className="flex-1">{children}</div>
@@ -24,9 +24,9 @@ interface HintBannerProps {
 }
 
 const hintClass = {
-  info: "border-sky-200 bg-sky-50 text-sky-700",
+  info: "border-sky-200 bg-[rgba(58,94,122,0.12)] text-blue",
   warn: "border-amber-200 bg-amber-50 text-amber-700",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  success: "border-green bg-[rgba(95,122,77,0.15)] text-green",
 };
 
 const hintIcon = {

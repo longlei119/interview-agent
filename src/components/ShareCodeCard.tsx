@@ -69,7 +69,7 @@ export function ShareCodeCard({ shareCode, shareCodeSetAt }: Props) {
             onClick={reset}
             disabled={busy || !canReset}
             title={!canReset ? "每天只能重置一次" : "重置分享码"}
-            className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-brand-25 hover:text-brand-500 disabled:opacity-40"
           >
             {busy ? <Spinner size="sm" /> : <Icon name="refresh" size={14} />}
             重置

@@ -88,7 +88,7 @@ export default async function ExplorePage({
   return (
     <div className="animate-fade-in">
       <div className="mb-5">
-        <h1 className="text-2xl font-bold text-ink">题库广场</h1>
+        <h1 className="font-serif text-2xl font-bold text-ink">题库广场</h1>
         <p className="mt-1 text-sm text-muted">
           大家公开分享的题目，按热度排序。点开任意一题练习、点赞，或拉到自己的题库。
         </p>

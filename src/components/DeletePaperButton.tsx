@@ -47,7 +47,7 @@ export function DeletePaperButton({ paperId, title, attemptCount }: Props) {
       title={busy ? "删除中..." : "删除试卷"}
       disabled={busy}
       onClick={handleDelete}
-      className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-red-200 bg-surface px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+      className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-brand-200 bg-surface px-3 text-xs font-medium text-brand-500 transition-colors hover:bg-brand-25 disabled:opacity-50"
     >
       <Icon name="trash" size={14} />
       {busy ? "..." : "删除"}

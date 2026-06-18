@@ -137,7 +137,7 @@ export function InterviewChat({
             <div className="flex items-center gap-1 text-xs text-muted">
               <span
                 className={`inline-block size-1.5 rounded-full ${
-                  finished ? "bg-muted" : "bg-emerald-500"
+                  finished ? "bg-muted" : "bg-[rgba(95,122,77,0.15)]0"
                 }`}
               />
               {finished ? "面试已结束" : "面试进行中"}
@@ -241,15 +241,15 @@ export function InterviewChat({
                     onClick={toggleMic}
                     className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                       stt.listening
-                        ? "bg-red-500 text-white shadow-soft hover:bg-red-600"
-                        : "bg-canvas text-muted hover:bg-slate-200 hover:text-ink"
+                        ? "bg-brand-500 text-white shadow-soft hover:bg-brand-600"
+                        : "bg-canvas text-muted hover:bg-line hover:text-ink"
                     }`}
                   >
                     {stt.listening ? (
                       <>
                         <span className="relative flex size-2.5">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                          <span className="relative inline-flex size-2.5 rounded-full bg-white" />
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-surface opacity-75" />
+                          <span className="relative inline-flex size-2.5 rounded-full bg-surface" />
                         </span>
                         停止
                       </>

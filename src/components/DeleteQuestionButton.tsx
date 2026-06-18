@@ -52,7 +52,7 @@ export function DeleteQuestionButton({
         title={busy ? "删除中..." : "删除"}
         disabled={busy}
         onClick={handleDelete}
-        className="inline-flex size-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+        className="inline-flex size-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-brand-25 hover:text-brand-500 disabled:opacity-50"
       >
         <Icon name="trash" size={14} />
       </button>
@@ -64,7 +64,7 @@ export function DeleteQuestionButton({
       type="button"
       disabled={busy}
       onClick={handleDelete}
-      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-red-200 bg-surface px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-brand-200 bg-surface px-3 text-xs font-medium text-brand-500 transition-colors hover:bg-brand-25 disabled:opacity-50"
     >
       <Icon name="trash" size={14} />
       {busy ? "删除中..." : "删除"}

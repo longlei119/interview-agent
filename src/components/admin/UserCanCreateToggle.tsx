@@ -42,7 +42,7 @@ export function UserCanCreateToggle({ userId, canCreate, isSelf }: Props) {
       disabled={busy}
       className={`inline-flex h-8 items-center rounded-lg border px-3 text-sm font-medium transition-colors disabled:opacity-60 ${
         value
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+          ? "border-green bg-[rgba(95,122,77,0.15)] text-green hover:bg-[rgba(95,122,77,0.25)]"
           : "border-line bg-surface text-muted hover:bg-canvas hover:text-ink"
       }`}
     >

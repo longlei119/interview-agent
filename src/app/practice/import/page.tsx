@@ -37,7 +37,7 @@ export default async function ImportQuestionsPage() {
         <Icon name="arrow-left" size={16} />
         返回我的题库
       </Link>
-      <h1 className="text-2xl font-bold text-ink">导入题目</h1>
+      <h1 className="font-serif text-2xl font-bold text-ink">导入题目</h1>
       <p className="mb-6 mt-1 text-sm leading-relaxed text-muted">
         粘贴文本或上传图片，AI 会自动识别出面试题、归类，并为没有答案的题补上参考答案。
         识别结果会直接进入你的题库（默认私有），AI 补的答案会标注「AI 生成答案」方便你核对。
