@@ -56,7 +56,7 @@ export function Navbar({
   const linkClass = (href: string) =>
     `inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors duration-150 ease-out-soft ${
       href === activeHref
-        ? "bg-ink text-surface"
+        ? "bg-accent-50 text-accent-700"
         : "text-muted hover:bg-canvas hover:text-ink"
     }`;
 
