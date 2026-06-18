@@ -62,6 +62,7 @@ beforeAll(async () => {
         direction: "前端",
         difficulty: "中等",
         tags: "",
+        detailedAnswer: "",
       },
     });
     created.push(q.id);
@@ -191,6 +192,7 @@ describe("Paper attempt lifecycle", () => {
       data: {
         userId: testUser!.id,
         title: "作答测试试卷",
+        description: "",
         timeLimit: 10,
         items: {
           create: questionIds.slice(0, 2).map((qid, i) => ({
@@ -296,7 +298,7 @@ describe("Paper attempt lifecycle", () => {
   it("should isolate attempts between users", async () => {
     // Create attempt for other user
     await prisma.testPaperAttempt.create({
-      data: { paperId, userId: otherUser!.id },
+      data: { paperId, userId: otherUser!.id, answers: "{}", scores: "{}", feedbacks: "{}" },
     });
 
     const testUserAttempts = await prisma.testPaperAttempt.findMany({

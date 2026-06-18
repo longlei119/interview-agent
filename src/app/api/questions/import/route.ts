@@ -184,6 +184,7 @@ export async function POST(req: NextRequest) {
           importedByAi: true,
           answerGeneratedByAi,
           manualHeat,
+          detailedAnswer: "",
         },
       });
 
