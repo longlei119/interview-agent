@@ -56,7 +56,7 @@ export function Navbar({
   const linkClass = (href: string) =>
     `inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors duration-150 ease-out-soft ${
       href === activeHref
-        ? "bg-accent-50 text-accent-700"
+        ? "bg-accent-100 text-accent-700 font-semibold"
         : "text-muted hover:bg-canvas hover:text-ink"
     }`;
 
@@ -68,7 +68,7 @@ export function Navbar({
           href="/"
           className="flex shrink-0 items-center gap-2.5 font-serif font-bold text-ink transition-colors hover:text-brand-500"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-ink text-surface shadow-soft ring-1 ring-inset ring-brand-500">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-accent-500 text-white shadow-soft">
             <Icon name="target" size={18} />
           </span>
           <span className="hidden text-base tracking-tight sm:inline">AI 面试助手</span>
