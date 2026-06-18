@@ -5,12 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { PracticePanel } from "@/components/PracticePanel";
 import { QuestionActions } from "@/components/QuestionActions";
 import { computeHeat } from "@/lib/heat";
-
-const difficultyColor: Record<string, string> = {
-  简单: "bg-green-100 text-green-700",
-  中等: "bg-amber-100 text-amber-700",
-  困难: "bg-red-100 text-red-700",
-};
+import { Badge, Card, Icon } from "@/components/ui";
 
 export default async function QuestionPage({
   params,
@@ -31,12 +26,10 @@ export default async function QuestionPage({
   const isAdmin = user.role === "admin";
   const isPublicVisible = question.visibility === "public" && !question.isDelisted;
 
-  // 访问控制：我拥有 / 公开未下架 / 管理员
   if (!isOwner && !isPublicVisible && !isAdmin) {
     notFound();
   }
 
-  // 浏览计数：非作者本人首次浏览才 +1（QuestionView 去重）
   let alreadyLiked = false;
   if (!isOwner) {
     const view = await prisma.questionView.findUnique({
@@ -71,68 +64,68 @@ export default async function QuestionPage({
     .filter(Boolean);
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <Link
         href={isOwner ? "/practice" : "/explore"}
-        className="mb-4 inline-flex items-center text-sm text-gray-500 hover:text-brand-600"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-brand-600"
       >
-        ← {isOwner ? "返回我的题库" : "返回题库广场"}
+        <Icon name="arrow-left" size={16} />
+        {isOwner ? "返回我的题库" : "返回题库广场"}
       </Link>
 
-      <div className="mb-4 rounded-xl border border-gray-200 bg-white p-5">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600">
-            {question.direction}
-          </span>
-          <span
-            className={`rounded-md px-2 py-0.5 text-xs font-medium ${
-              difficultyColor[question.difficulty] || "bg-gray-100 text-gray-600"
-            }`}
-          >
-            {question.difficulty}
-          </span>
-          {question.visibility === "public" && (
-            <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">
-              公开
-            </span>
-          )}
-          {question.isDelisted && (
-            <span className="rounded-md bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">
-              已下架
-            </span>
-          )}
+      <Card padded className="mb-5">
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          <Badge variant="brand">{question.direction}</Badge>
+          <Badge difficulty={question.difficulty as "简单" | "中等" | "困难"} />
+          {question.visibility === "public" && <Badge variant="success">公开</Badge>}
+          {question.isDelisted && <Badge variant="gray">已下架</Badge>}
           {question.answerGeneratedByAi && (
-            <span className="rounded-md bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
-              🤖 AI 生成答案
-            </span>
+            <Badge variant="violet">
+              <Icon name="bot" size={12} />
+              AI 生成答案
+            </Badge>
           )}
-          <span className="ml-auto text-xs text-gray-400">🔥 热度 {heat}</span>
+          <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted">
+            <Icon name="flame" size={13} className="text-amber-500" />
+            热度 {heat}
+          </span>
         </div>
 
-        <h1 className="text-xl font-bold text-gray-900">{question.title}</h1>
+        <h1 className="text-xl font-bold text-ink">{question.title}</h1>
 
-        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-400">
-          <span>作者：{question.owner.name}</span>
-          <span>👁 {question.viewCount}</span>
-          <span>❤️ {question.likeCount}</span>
-          <span>📥 {question.cloneCount}</span>
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted">
+          <span className="inline-flex items-center gap-1">
+            <Icon name="user" size={12} />
+            {question.owner.name}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Icon name="eye" size={12} />
+            {question.viewCount}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Icon name="heart" size={12} />
+            {question.likeCount}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Icon name="download" size={12} />
+            {question.cloneCount}
+          </span>
         </div>
-
-        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-gray-600">
-          {question.body}
-        </p>
 
         {tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {tags.map((t) => (
-              <span key={t} className="text-xs text-gray-400">
+              <span
+                key={t}
+                className="rounded-full bg-canvas px-2 py-0.5 text-xs text-muted"
+              >
                 #{t}
               </span>
             ))}
           </div>
         )}
 
-        <div className="mt-4 border-t border-gray-100 pt-4">
+        <div className="mt-4 border-t border-line pt-4">
           <QuestionActions
             questionId={question.id}
             isOwner={isOwner}
@@ -141,9 +134,13 @@ export default async function QuestionPage({
             initialLikeCount={question.likeCount}
           />
         </div>
-      </div>
+      </Card>
 
-      <PracticePanel questionId={question.id} referenceAnswer={question.referenceAnswer} />
+      <PracticePanel
+        questionId={question.id}
+        referenceAnswer={question.referenceAnswer}
+        detailedAnswer={question.detailedAnswer}
+      />
     </div>
   );
 }

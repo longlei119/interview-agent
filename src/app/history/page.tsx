@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { Badge, Button, EmptyState, Icon } from "@/components/ui";
 
 function formatDate(d: Date): string {
   return new Date(d).toLocaleString("zh-CN", {
@@ -12,10 +13,10 @@ function formatDate(d: Date): string {
   });
 }
 
-function scoreColor(score: number): string {
-  if (score >= 80) return "bg-green-100 text-green-700";
-  if (score >= 60) return "bg-amber-100 text-amber-700";
-  return "bg-red-100 text-red-700";
+function scoreVariant(score: number): "success" | "warn" | "danger" {
+  if (score >= 80) return "success";
+  if (score >= 60) return "warn";
+  return "danger";
 }
 
 export default async function HistoryPage() {
@@ -38,40 +39,56 @@ export default async function HistoryPage() {
   ]);
 
   return (
-    <div>
-      <h1 className="mb-1 text-2xl font-bold text-gray-900">我的记录</h1>
-      <p className="mb-6 text-sm text-gray-500">回看你的刷题点评和模拟面试总评。</p>
+    <div className="animate-fade-in">
+      <h1 className="text-2xl font-bold text-ink">我的记录</h1>
+      <p className="mb-6 mt-1 text-sm text-muted">回看你的刷题点评和模拟面试总评。</p>
 
-      {/* 模拟面试记录 */}
       <section className="mb-8">
-        <h2 className="mb-3 text-lg font-semibold text-gray-800">模拟面试</h2>
+        <div className="mb-3 flex items-center gap-2">
+          <Icon name="mic" size={18} className="text-brand-500" />
+          <h2 className="text-lg font-semibold text-ink">模拟面试</h2>
+        </div>
         {interviews.length === 0 ? (
-          <EmptyHint text="还没有模拟面试记录" href="/interview" cta="去面试" />
+          <EmptyState
+            icon="mic"
+            title="还没有模拟面试记录"
+            desc="去开启你的第一场 AI 模拟面试"
+            action={
+              <Link href="/interview">
+                <Button leftIcon={<Icon name="play" size={16} />}>去面试</Button>
+              </Link>
+            }
+          />
         ) : (
           <div className="space-y-2">
             {interviews.map((it) => (
               <Link
                 key={it.id}
                 href={`/interview/${it.id}`}
-                className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-brand-300"
+                className="flex items-center justify-between rounded-xl border border-line bg-surface p-4 shadow-card transition-all duration-150 ease-out-soft hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-hover"
               >
                 <div className="min-w-0">
-                  <div className="font-medium text-gray-900">
+                  <div className="font-medium text-ink">
                     {it.role} · {it.level}
                   </div>
-                  <div className="mt-0.5 text-xs text-gray-400">
-                    {formatDate(it.createdAt)} · {it._count.messages} 条对话 ·{" "}
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted">
+                    <Icon name="clock" size={12} />
+                    {formatDate(it.createdAt)}
+                    <span>·</span>
+                    {it._count.messages} 条对话
+                    <span>·</span>
                     {it.status === "finished" ? "已结束" : "进行中"}
                   </div>
                 </div>
                 {it.status === "finished" ? (
-                  <span
-                    className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${scoreColor(it.score)}`}
-                  >
+                  <Badge variant={scoreVariant(it.score)} className="text-sm font-bold">
                     {it.score} 分
-                  </span>
+                  </Badge>
                 ) : (
-                  <span className="shrink-0 text-xs text-brand-500">继续 →</span>
+                  <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-600">
+                    继续
+                    <Icon name="arrow-right" size={14} />
+                  </span>
                 )}
               </Link>
             ))}
@@ -79,48 +96,63 @@ export default async function HistoryPage() {
         )}
       </section>
 
-      {/* 刷题记录 */}
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-gray-800">刷题点评</h2>
+        <div className="mb-3 flex items-center gap-2">
+          <Icon name="edit" size={18} className="text-brand-500" />
+          <h2 className="text-lg font-semibold text-ink">刷题点评</h2>
+        </div>
         {practices.length === 0 ? (
-          <EmptyHint text="还没有刷题记录" href="/practice" cta="去刷题" />
+          <EmptyState
+            icon="book"
+            title="还没有刷题记录"
+            desc="去题库挑一道题练习，AI 会给你点评打分"
+            action={
+              <Link href="/practice">
+                <Button leftIcon={<Icon name="book" size={16} />}>去刷题</Button>
+              </Link>
+            }
+          />
         ) : (
           <div className="space-y-2">
             {practices.map((p) => (
               <details
                 key={p.id}
-                className="rounded-xl border border-gray-200 bg-white p-4"
+                className="group rounded-xl border border-line bg-surface p-4 shadow-card transition-colors hover:border-brand-300"
               >
-                <summary className="flex cursor-pointer items-center justify-between">
+                <summary className="flex cursor-pointer list-none items-center justify-between">
                   <div className="min-w-0">
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-ink">
                       {p.question?.title ?? "（题目已删除）"}
                     </div>
-                    <div className="mt-0.5 text-xs text-gray-400">
+                    <div className="mt-0.5 text-xs text-muted">
                       {p.question?.direction ? `${p.question.direction} · ` : ""}
                       {formatDate(p.createdAt)}
                     </div>
                   </div>
-                  <span
-                    className={`ml-3 shrink-0 rounded-full px-3 py-1 text-sm font-bold ${scoreColor(p.score)}`}
-                  >
-                    {p.score} 分
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={scoreVariant(p.score)} className="text-sm font-bold">
+                      {p.score} 分
+                    </Badge>
+                    <Icon
+                      name="chevron-down"
+                      size={16}
+                      className="text-muted transition-transform group-open:rotate-180"
+                    />
+                  </div>
                 </summary>
-                <div className="mt-3 space-y-3 border-t border-gray-100 pt-3">
+                <div className="mt-3 space-y-3 border-t border-line pt-3">
                   <div>
-                    <div className="mb-1 text-xs font-semibold text-gray-500">
-                      我的回答
-                    </div>
-                    <div className="whitespace-pre-wrap text-sm text-gray-600">
+                    <div className="mb-1 text-xs font-semibold text-muted">我的回答</div>
+                    <div className="whitespace-pre-wrap text-sm text-ink">
                       {p.userAnswer || "（未作答）"}
                     </div>
                   </div>
                   <div>
-                    <div className="mb-1 text-xs font-semibold text-brand-600">
+                    <div className="mb-1 flex items-center gap-1 text-xs font-semibold text-brand-600">
+                      <Icon name="sparkles" size={12} />
                       AI 点评
                     </div>
-                    <div className="whitespace-pre-wrap text-sm text-gray-700">
+                    <div className="whitespace-pre-wrap text-sm text-ink">
                       {p.aiFeedback}
                     </div>
                   </div>
@@ -130,28 +162,6 @@ export default async function HistoryPage() {
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function EmptyHint({
-  text,
-  href,
-  cta,
-}: {
-  text: string;
-  href: string;
-  cta: string;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-300 bg-white p-5">
-      <span className="text-sm text-gray-400">{text}</span>
-      <Link
-        href={href}
-        className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
-      >
-        {cta}
-      </Link>
     </div>
   );
 }

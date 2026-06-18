@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import type { TopicNode } from "@/lib/topics";
+import { Icon, Spinner } from "@/components/ui";
 
 interface Props {
   tree: TopicNode[];
-  activeId: string | null; // 当前选中的话题节点（null = 全部）
-  unclassifiedCount: number; // 未分类题目数
-  // 每个话题节点（含子孙）下的题目数，用于显示计数
+  activeId: string | null;
+  unclassifiedCount: number;
   countMap: Record<string, number>;
 }
 
@@ -63,34 +63,33 @@ export function TopicTree({ tree, activeId, unclassifiedCount, countMap }: Props
     }
   }
 
+  const itemClass = (active: boolean) =>
+    `flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors duration-150 ${
+      active ? "bg-brand-50 text-brand-700" : "text-muted hover:bg-canvas hover:text-ink"
+    }`;
+
   return (
     <aside className="w-full shrink-0 md:w-60">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-400">话题分类</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted">话题分类</span>
         <button
           onClick={addRoot}
           disabled={busy}
-          className="rounded-md px-2 py-0.5 text-xs font-medium text-brand-600 hover:bg-brand-50 disabled:opacity-60"
+          className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-medium text-brand-600 transition-colors hover:bg-brand-50 disabled:opacity-60"
         >
-          + 加根话题
+          {busy ? <Spinner size="sm" /> : <Icon name="plus" size={12} />}
+          加根话题
         </button>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-2 text-sm">
-        {/* 全部 */}
-        <Link
-          href="/practice"
-          className={`block rounded-lg px-2 py-1.5 ${
-            !activeId
-              ? "bg-brand-500 text-white"
-              : "text-gray-600 hover:bg-gray-50"
-          }`}
-        >
-          全部题目
+      <div className="rounded-xl border border-line bg-surface p-2 text-sm shadow-card">
+        <Link href="/practice" className={itemClass(!activeId)}>
+          <Icon name="list" size={14} />
+          <span className="flex-1">全部题目</span>
         </Link>
 
         {tree.length === 0 && (
-          <p className="px-2 py-3 text-xs text-gray-400">
+          <p className="px-2 py-3 text-xs text-muted">
             还没有话题，点上方「加根话题」开始组织你的题库。
           </p>
         )}
@@ -109,17 +108,13 @@ export function TopicTree({ tree, activeId, unclassifiedCount, countMap }: Props
           />
         ))}
 
-        {/* 未分类 */}
         <Link
           href="/practice?topic=none"
-          className={`mt-1 flex items-center justify-between rounded-lg px-2 py-1.5 ${
-            activeId === "none"
-              ? "bg-brand-500 text-white"
-              : "text-gray-500 hover:bg-gray-50"
-          }`}
+          className={`${itemClass(activeId === "none")} mt-1 border-t border-line pt-1`}
         >
-          <span>未分类</span>
-          <span className="text-xs opacity-70">{unclassifiedCount}</span>
+          <Icon name="file" size={14} />
+          <span className="flex-1">未分类</span>
+          <span className="text-xs text-muted">{unclassifiedCount}</span>
         </Link>
       </div>
     </aside>
@@ -152,67 +147,57 @@ function TopicItem({
   return (
     <div>
       <div
-        className={`group flex items-center gap-1 rounded-lg px-1 py-1 ${
-          active ? "bg-brand-500 text-white" : "hover:bg-gray-50"
+        className={`group flex items-center gap-1 rounded-lg px-1 py-1 transition-colors ${
+          active ? "bg-brand-50" : "hover:bg-canvas"
         }`}
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
       >
-        {/* 折叠箭头 */}
         {hasChildren ? (
           <button
             onClick={() => setOpen((v) => !v)}
-            className="flex h-4 w-4 shrink-0 items-center justify-center text-xs opacity-70"
+            className="flex h-4 w-4 shrink-0 items-center justify-center text-muted transition-transform"
+            style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
           >
-            {open ? "▾" : "▸"}
+            <Icon name="chevron-down" size={14} />
           </button>
         ) : (
           <span className="h-4 w-4 shrink-0" />
         )}
 
-        {/* 节点名（点击筛选） */}
         <Link
           href={`/practice?topic=${node.id}`}
-          className={`min-w-0 flex-1 truncate ${
-            active ? "text-white" : "text-gray-700"
-          }`}
+          className={`min-w-0 flex-1 truncate ${active ? "text-brand-700" : "text-ink"}`}
         >
           {node.name}
-          <span
-            className={`ml-1 text-xs ${active ? "opacity-80" : "text-gray-400"}`}
-          >
+          <span className={`ml-1.5 text-xs ${active ? "text-brand-400" : "text-muted"}`}>
             {countMap[node.id] ?? 0}
           </span>
         </Link>
 
-        {/* 悬停操作 */}
-        <span
-          className={`flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 ${
-            active ? "text-white" : "text-gray-400"
-          }`}
-        >
+        <span className="flex shrink-0 items-center gap-0.5 text-muted opacity-0 transition-opacity group-hover:opacity-100">
           <button
             onClick={() => onAddChild(node.id, node.name)}
             disabled={busy}
             title="新建子话题"
-            className="rounded px-1 hover:bg-black/10"
+            className="rounded p-1 hover:bg-brand-100 hover:text-brand-600"
           >
-            +
+            <Icon name="plus" size={12} />
           </button>
           <button
             onClick={() => onRename(node.id, node.name)}
             disabled={busy}
             title="重命名"
-            className="rounded px-1 hover:bg-black/10"
+            className="rounded p-1 hover:bg-brand-100 hover:text-brand-600"
           >
-            ✎
+            <Icon name="edit" size={12} />
           </button>
           <button
             onClick={() => onRemove(node.id, node.name)}
             disabled={busy}
             title="删除"
-            className="rounded px-1 hover:bg-black/10"
+            className="rounded p-1 hover:bg-red-100 hover:text-red-600"
           >
-            ✕
+            <Icon name="trash" size={12} />
           </button>
         </span>
       </div>

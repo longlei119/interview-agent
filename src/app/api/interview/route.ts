@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   try {
     // 生成面试官开场白
     const opening = await chat(
-      [{ role: "system", content: interviewerSystemPrompt(role, level) }],
+      [{ role: "system", content: await interviewerSystemPrompt(role, level) }],
       { temperature: 0.8 }
     );
 

@@ -25,7 +25,7 @@ export async function POST(
 
   try {
     const feedback = await chat(
-      evaluateAnswerMessages(
+      await evaluateAnswerMessages(
         {
           title: question.title,
           body: question.body,

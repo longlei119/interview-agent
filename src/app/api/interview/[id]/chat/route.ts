@@ -42,7 +42,7 @@ export async function POST(
   const history: ChatMessage[] = [
     {
       role: "system",
-      content: interviewerSystemPrompt(interview.role, interview.level),
+      content: await interviewerSystemPrompt(interview.role, interview.level),
     },
     ...interview.messages.map((m): ChatMessage => ({
       role: m.role === "interviewer" ? "assistant" : "user",

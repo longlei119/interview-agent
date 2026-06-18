@@ -1,19 +1,32 @@
 "use client";
 
 import { useState } from "react";
+import { RichContent } from "@/components/RichEditor";
+import { VoiceInput } from "@/components/VoiceInput";
+import { Button, Card, CardHeader, CardBody, ErrorBanner, Icon, Textarea } from "@/components/ui";
 
 interface Props {
   questionId: string;
   referenceAnswer: string;
+  detailedAnswer?: string;
 }
 
-export function PracticePanel({ questionId, referenceAnswer }: Props) {
+function hasText(html: string) {
+  if (!html) return false;
+  const text = html.replace(/<[^>]+>/g, "").trim();
+  return text.length > 0;
+}
+
+export function PracticePanel({ questionId, referenceAnswer, detailedAnswer }: Props) {
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
   const [score, setScore] = useState<number | null>(null);
   const [showReference, setShowReference] = useState(false);
+  const [showDetailed, setShowDetailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const detailedAvailable = hasText(detailedAnswer ?? "");
 
   async function handleSubmit() {
     if (!answer.trim()) {
@@ -51,61 +64,101 @@ export function PracticePanel({ questionId, referenceAnswer }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* 答题区 */}
-      <div>
-        <label className="mb-2 block text-sm font-semibold text-gray-700">
-          你的答案
-        </label>
-        <textarea
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          rows={8}
-          placeholder="在这里写下你的回答，然后让 AI 帮你点评..."
-          className="w-full resize-y rounded-xl border border-gray-300 p-3 text-sm leading-relaxed outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+      <Card padded>
+        <CardHeader
+          icon={<Icon name="edit" size={18} />}
+          title="你的答案"
+          desc="写下回答后让 AI 帮你点评打分"
         />
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-        <div className="mt-3 flex flex-wrap gap-3">
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
-          >
-            {loading ? "AI 点评中..." : "提交，让 AI 点评"}
-          </button>
-          <button
-            onClick={() => setShowReference((v) => !v)}
-            className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
-          >
-            {showReference ? "隐藏参考答案" : "查看参考答案"}
-          </button>
-        </div>
-      </div>
+        <CardBody>
+          <Textarea
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            rows={8}
+            placeholder="在这里写下你的回答，然后让 AI 帮你点评..."
+          />
+          <div className="mt-2">
+            <VoiceInput
+              onText={(text, replace) => {
+                if (replace) {
+                  setAnswer(text);
+                } else {
+                  setAnswer((prev) => (prev && !prev.endsWith(" ") ? `${prev} ${text}` : `${prev}${text}`));
+                }
+              }}
+              getCurrentText={() => answer}
+            />
+          </div>
+          {error && <div className="mt-3"><ErrorBanner>{error}</ErrorBanner></div>}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              onClick={handleSubmit}
+              loading={loading}
+              leftIcon={!loading ? <Icon name="sparkles" size={16} /> : undefined}
+            >
+              {loading ? "AI 点评中..." : "提交，让 AI 点评"}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setShowReference((v) => !v)}
+              leftIcon={<Icon name="eye" size={16} />}
+            >
+              {showReference ? "隐藏标准答案" : "查看标准答案"}
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={!detailedAvailable}
+              onClick={() => setShowDetailed((v) => !v)}
+              leftIcon={<Icon name="book" size={16} />}
+              title={detailedAvailable ? "查看详细答案" : "本题没有详细答案"}
+            >
+              {showDetailed ? "隐藏详细答案" : "查看详细答案"}
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
 
-      {/* AI 点评 */}
       {feedback && (
-        <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="font-semibold text-brand-700">AI 点评</h3>
-            {score !== null && (
-              <span className="rounded-full bg-brand-500 px-3 py-1 text-sm font-bold text-white">
-                {score} 分
-              </span>
-            )}
-          </div>
-          <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
-            {feedback}
-          </div>
-        </div>
+        <Card className="animate-fade-in border-brand-200 bg-brand-25/40">
+          <CardHeader
+            icon={<Icon name="sparkles" size={18} />}
+            title="AI 点评"
+            action={
+              score !== null && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-500 px-3 py-1 text-sm font-bold text-white shadow-soft">
+                  {score} 分
+                </span>
+              )
+            }
+          />
+          <CardBody>
+            <div className="whitespace-pre-wrap text-sm leading-relaxed text-ink">
+              {feedback}
+            </div>
+          </CardBody>
+        </Card>
       )}
 
-      {/* 参考答案 */}
       {showReference && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <h3 className="mb-2 font-semibold text-gray-700">参考答案</h3>
-          <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-600">
-            {referenceAnswer}
-          </div>
-        </div>
+        <Card padded className="animate-fade-in">
+          <CardHeader title="标准答案" icon={<Icon name="book" size={18} />} />
+          <CardBody>
+            <RichContent html={referenceAnswer} className="text-ink" />
+          </CardBody>
+        </Card>
+      )}
+
+      {showDetailed && detailedAvailable && (
+        <Card padded className="animate-fade-in border-violet-200 bg-violet-25/30">
+          <CardHeader
+            title="详细答案"
+            desc="包含落地实现、扩展细节等深入内容"
+            icon={<Icon name="list" size={18} />}
+          />
+          <CardBody>
+            <RichContent html={detailedAnswer ?? ""} className="text-ink" />
+          </CardBody>
+        </Card>
       )}
     </div>
   );

@@ -22,13 +22,13 @@ export default async function RootLayout({
   const user = await getCurrentUser();
   return (
     <html lang="zh-CN">
-      <body>
+      <body className="min-h-screen">
         <Navbar
           userName={user?.name ?? null}
           role={user?.role ?? null}
           canCreate={user?.canCreate ?? false}
         />
-        <main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
+        <main className="mx-auto w-full max-w-5xl px-4 py-8">{children}</main>
       </body>
     </html>
   );

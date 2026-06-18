@@ -45,6 +45,8 @@ export async function PATCH(
     if (typeof body.body === "string") data.body = body.body.trim();
     if (typeof body.referenceAnswer === "string")
       data.referenceAnswer = body.referenceAnswer.trim();
+    if (typeof body.detailedAnswer === "string")
+      data.detailedAnswer = body.detailedAnswer.trim();
     if (typeof body.tags === "string") data.tags = body.tags.trim();
     if (body.visibility === "public" || body.visibility === "private") {
       data.visibility = body.visibility;
@@ -111,9 +113,16 @@ export async function DELETE(
     return NextResponse.json({ error: "无权删除该题" }, { status: 403 });
   }
 
-  await prisma.question.update({
-    where: { id },
-    data: { deletedAt: new Date() },
-  });
+  // 软删题目：同步把试卷里指向它的 TestPaperItem 一并删掉，
+  // 这样试卷的题数、take/edit/result 页都不会再看到这道题。
+  // 题目本体走软删保留（保住别人的练习记录、可恢复），
+  // 但试卷关联是硬删——因为试卷编辑页不允许保留无主 item。
+  await prisma.$transaction([
+    prisma.question.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    }),
+    prisma.testPaperItem.deleteMany({ where: { questionId: id } }),
+  ]);
   return NextResponse.json({ ok: true });
 }

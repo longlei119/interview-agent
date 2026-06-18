@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTTS } from "./useTTS";
 import { useSTT } from "./useSTT";
+import { Button, ErrorBanner, Icon, Spinner } from "@/components/ui";
 
 interface Msg {
   role: "interviewer" | "candidate";
@@ -44,12 +45,10 @@ export function InterviewChat({
   const stt = useSTT((text) => setInput(text));
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 自动滚到底部
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, streaming, summary]);
 
-  // 进入页面时朗读面试官最后一句开场白
   useEffect(() => {
     const last = initialMessages[initialMessages.length - 1];
     if (last?.role === "interviewer") tts.speak(last.content);
@@ -126,15 +125,23 @@ export function InterviewChat({
   }
 
   return (
-    <div className="flex flex-col" style={{ height: "calc(100vh - 8rem)" }}>
+    <div className="flex animate-fade-in flex-col" style={{ height: "calc(100vh - 8rem)" }}>
       {/* 头部 */}
-      <div className="mb-3 flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
-        <div>
-          <div className="font-semibold text-gray-900">
-            {role} · {level}
+      <div className="mb-3 flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3 shadow-card">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+            <Icon name="user" size={20} />
           </div>
-          <div className="text-xs text-gray-400">
-            {finished ? "面试已结束" : "面试进行中"}
+          <div>
+            <div className="font-semibold text-ink">{role} · {level}</div>
+            <div className="flex items-center gap-1 text-xs text-muted">
+              <span
+                className={`inline-block size-1.5 rounded-full ${
+                  finished ? "bg-muted" : "bg-emerald-500"
+                }`}
+              />
+              {finished ? "面试已结束" : "面试进行中"}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -144,24 +151,21 @@ export function InterviewChat({
                 if (tts.speaking) tts.stop();
                 tts.setEnabled(!tts.enabled);
               }}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
+              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 tts.enabled
-                  ? "bg-brand-50 text-brand-600"
-                  : "bg-gray-100 text-gray-400"
+                  ? "bg-brand-50 text-brand-700"
+                  : "bg-canvas text-muted hover:text-ink"
               }`}
               title="面试官语音播报开关"
             >
-              {tts.enabled ? "🔊 朗读开" : "🔇 朗读关"}
+              <Icon name={tts.enabled ? "volume" : "volume-off"} size={14} />
+              {tts.enabled ? "朗读开" : "朗读关"}
             </button>
           )}
           {!finished && (
-            <button
-              onClick={handleFinish}
-              disabled={finishing}
-              className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-60"
-            >
+            <Button onClick={handleFinish} loading={finishing} size="sm" variant="secondary">
               {finishing ? "生成中..." : "结束并评分"}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -169,43 +173,51 @@ export function InterviewChat({
       {/* 对话区 */}
       <div
         ref={scrollRef}
-        className="flex-1 space-y-4 overflow-y-auto rounded-xl border border-gray-200 bg-white p-4"
+        className="flex-1 space-y-4 overflow-y-auto rounded-xl border border-line bg-surface p-4 shadow-card"
       >
         {messages.map((m, i) => (
           <MessageBubble key={i} role={m.role} content={m.content} />
         ))}
         {streaming && <MessageBubble role="interviewer" content={streaming} />}
         {sending && !streaming && (
-          <MessageBubble role="interviewer" content="思考中…" />
+          <div className="flex justify-start">
+            <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-sm bg-canvas px-4 py-3 text-sm text-muted">
+              <Spinner size="sm" />
+              思考中…
+            </div>
+          </div>
         )}
 
-        {/* 总评卡片 */}
         {finished && summary && (
-          <div className="rounded-xl border border-brand-200 bg-brand-50/60 p-4">
+          <div className="animate-fade-in rounded-xl border border-brand-200 bg-brand-25/60 p-4">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="font-bold text-brand-700">面试总评</h3>
-              <span className="rounded-full bg-brand-500 px-3 py-1 text-sm font-bold text-white">
+              <h3 className="flex items-center gap-1.5 font-bold text-brand-700">
+                <Icon name="sparkles" size={16} />
+                面试总评
+              </h3>
+              <span className="rounded-full bg-brand-500 px-3 py-1 text-sm font-bold text-white shadow-soft">
                 {score} 分
               </span>
             </div>
-            <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+            <div className="whitespace-pre-wrap text-sm leading-relaxed text-ink">
               {summary}
             </div>
-            <button
+            <Button
               onClick={() => router.push("/interview")}
-              className="mt-4 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+              className="mt-4"
+              leftIcon={<Icon name="play" size={14} />}
             >
               再来一场
-            </button>
+            </Button>
           </div>
         )}
       </div>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <div className="mt-2"><ErrorBanner>{error}</ErrorBanner></div>}
 
       {/* 输入区 */}
       {!finished && (
-        <div className="mt-3 rounded-xl border border-gray-200 bg-white p-3">
+        <div className="mt-3 rounded-xl border border-line bg-surface p-3 shadow-card">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -219,34 +231,70 @@ export function InterviewChat({
             placeholder={
               stt.listening ? "正在聆听，请说话…" : "输入你的回答，或点麦克风语音作答（Enter 发送）"
             }
-            className="w-full resize-none rounded-lg border border-gray-200 p-2 text-sm outline-none focus:border-brand-500"
+            className="w-full resize-none rounded-lg border border-line bg-surface p-2 text-sm outline-none transition-colors focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
           />
           <div className="mt-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               {stt.supported ? (
-                <button
-                  onClick={toggleMic}
-                  className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium ${
-                    stt.listening
-                      ? "bg-red-500 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {stt.listening ? "● 停止" : "🎤 语音作答"}
-                </button>
+                <>
+                  <button
+                    onClick={toggleMic}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                      stt.listening
+                        ? "bg-red-500 text-white shadow-soft hover:bg-red-600"
+                        : "bg-canvas text-muted hover:bg-slate-200 hover:text-ink"
+                    }`}
+                  >
+                    {stt.listening ? (
+                      <>
+                        <span className="relative flex size-2.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                          <span className="relative inline-flex size-2.5 rounded-full bg-white" />
+                        </span>
+                        停止
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="mic" size={16} />
+                        语音作答
+                      </>
+                    )}
+                  </button>
+                  {stt.serverAvailable && (
+                    <button
+                      type="button"
+                      disabled={stt.listening}
+                      onClick={stt.toggleMode}
+                      title={
+                        stt.mode === "native"
+                          ? "当前：浏览器原生。点击切到高精度（后端 ASR）"
+                          : "当前：高精度（后端 ASR）。点击切回浏览器原生"
+                      }
+                      className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
+                        stt.mode === "server"
+                          ? "bg-brand-100 text-brand-700"
+                          : "bg-canvas text-muted hover:text-ink"
+                      }`}
+                    >
+                      {stt.mode === "native" ? "原生" : "高精度"}
+                    </button>
+                  )}
+                </>
               ) : (
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-muted">
                   当前浏览器不支持语音输入，请用文字作答
                 </span>
               )}
+              {stt.error && <span className="text-xs text-rose-600">{stt.error}</span>}
             </div>
-            <button
+            <Button
               onClick={handleSend}
               disabled={sending || !input.trim()}
-              className="rounded-lg bg-brand-500 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50"
+              leftIcon={!sending ? <Icon name="send" size={16} /> : undefined}
+              loading={sending}
             >
               发送
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -261,11 +309,15 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
       <div
         className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
           isInterviewer
-            ? "rounded-tl-sm bg-gray-100 text-gray-800"
-            : "rounded-tr-sm bg-brand-500 text-white"
+            ? "rounded-tl-sm bg-canvas text-ink"
+            : "rounded-tr-sm bg-brand-500 text-white shadow-soft"
         }`}
       >
-        <div className="mb-0.5 text-xs opacity-70">
+        <div
+          className={`mb-0.5 text-xs ${
+            isInterviewer ? "text-muted" : "text-white/70"
+          }`}
+        >
           {isInterviewer ? "面试官" : "我"}
         </div>
         <div className="whitespace-pre-wrap">{content}</div>

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -23,6 +23,8 @@ model User {
   interviewSessions InterviewSession[]
   likes             QuestionLike[]
   views             QuestionView[]
+  testPapers        TestPaper[]
+  testPaperAttempts TestPaperAttempt[]
 }
 
 // 私人话题树：每个用户一棵，根节点 parentId 为 null，可任意嵌套。
@@ -51,11 +53,12 @@ model Question {
   direction       String // 方向，如「前端」——供题库广场跨用户筛选
   difficulty      String // 简单 / 中等 / 困难
   title           String
-  body            String
-  referenceAnswer String
+  body            String     @db.Text
+  referenceAnswer String     @db.Text
+  detailedAnswer  String     @db.Text // 详细答案：可能包含落地/扩展细节，应用层插入时给空串
   answerGeneratedByAi Boolean @default(false) // 参考答案由 AI 补全 → 显示「🤖 AI 生成答案」徽章
   importedByAi        Boolean @default(false) // 整题来自「导入题目」流水线，便于批量筛选核对
-  tags            String // 逗号分隔
+  tags            String     @db.Text // 逗号分隔
   visibility      String    @default("private") // private | public
   isDelisted      Boolean   @default(false) // 管理员下架
   deletedAt       DateTime? // 软删除标记
@@ -72,6 +75,7 @@ model Question {
   practiceRecords PracticeRecord[]
   likes           QuestionLike[]
   views           QuestionView[]
+  testPaperItems  TestPaperItem[]
 
   @@index([ownerId])
   @@index([topicId])
@@ -108,8 +112,8 @@ model PracticeRecord {
   id         String   @id @default(cuid())
   userId     String
   questionId String
-  userAnswer String
-  aiFeedback String
+  userAnswer String @db.Text
+  aiFeedback String @db.Text
   score      Int      @default(0)
   createdAt  DateTime @default(now())
 
@@ -125,7 +129,7 @@ model InterviewSession {
   role      String // 目标岗位，如「前端工程师」
   level     String // 初级 / 中级 / 高级
   status    String   @default("active") // active / finished
-  summary   String   @default("")
+  summary   String   @db.Text
   score     Int      @default(0)
   createdAt DateTime @default(now())
 
@@ -139,10 +143,97 @@ model InterviewMessage {
   id        String   @id @default(cuid())
   sessionId String
   role      String // interviewer / candidate
-  content   String
+  content   String   @db.Text
   createdAt DateTime @default(now())
 
   session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
+}
+
+model AiModelConfig {
+  id          String    @id @default(cuid())
+  role        String // primary | answer | vision
+  name        String
+  baseUrl     String
+  model       String
+  apiKey      String
+  enabled     Boolean   @default(true)
+  isDefault   Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  lastErrorAt DateTime?
+  lastError   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([role])
+  @@index([role, enabled])
+  @@index([role, isDefault])
+  @@index([role, sortOrder])
+}
+
+model AiPromptConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  title       String
+  description String   @default("")
+  category    String
+  content     String   @db.Text
+  variables   String   @db.Text // 应用层写入默认 "[]"
+  enabled     Boolean  @default(true)
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([enabled])
+}
+
+model TestPaper {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String   @db.Text
+  timeLimit   Int? // 考试时间限制（分钟），null 表示不限时
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items    TestPaperItem[]
+  attempts TestPaperAttempt[]
+
+  @@index([userId])
+}
+
+model TestPaperItem {
+  id         String @id @default(cuid())
+  paperId    String
+  questionId String
+  sortOrder  Int    @default(0)
+
+  paper    TestPaper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  question Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([paperId])
+  @@index([questionId])
+}
+
+model TestPaperAttempt {
+  id         String    @id @default(cuid())
+  paperId    String
+  userId     String
+  answers    String    @db.Text // JSON: { questionId: answerText }，应用层写入默认 "{}"
+  scores     String    @db.Text // JSON: { questionId: score }，应用层写入默认 "{}"
+  feedbacks  String    @db.Text // JSON: { questionId: feedback }，应用层写入默认 "{}"
+  totalScore Int       @default(0)
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  paper TestPaper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([paperId])
+  @@index([userId])
+  @@index([paperId, userId])
 }

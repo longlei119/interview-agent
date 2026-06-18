@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button, Card, ErrorBanner, Icon } from "@/components/ui";
 
 const ROLES = [
   "前端工程师",
@@ -46,28 +47,32 @@ export function StartInterview() {
     }
   }
 
+  const optionClass = (active: boolean) =>
+    `rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-150 ease-out-soft ${
+      active
+        ? "border-brand-500 bg-brand-50 text-brand-700 shadow-soft"
+        : "border-line bg-surface text-muted hover:border-brand-300 hover:text-ink"
+    }`;
+
   return (
-    <div className="mx-auto max-w-lg">
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900">开始模拟面试</h1>
-        <p className="mt-1 text-sm text-gray-500">
+    <div className="mx-auto max-w-lg animate-fade-in">
+      <Card padded>
+        <div className="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+          <Icon name="mic" size={22} />
+        </div>
+        <h1 className="mt-4 text-2xl font-bold text-ink">开始模拟面试</h1>
+        <p className="mt-1 text-sm text-muted">
           选择目标岗位和级别，AI 面试官会据此调整问题难度，并支持语音对话。
         </p>
 
         <div className="mt-6">
-          <label className="mb-2 block text-sm font-semibold text-gray-700">
-            目标岗位
-          </label>
+          <label className="mb-2 block text-sm font-semibold text-ink">目标岗位</label>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {ROLES.map((r) => (
               <button
                 key={r}
                 onClick={() => setRole(r)}
-                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                  role === r
-                    ? "border-brand-500 bg-brand-50 text-brand-600"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-brand-300"
-                }`}
+                className={optionClass(role === r)}
               >
                 {r}
               </button>
@@ -76,19 +81,13 @@ export function StartInterview() {
         </div>
 
         <div className="mt-5">
-          <label className="mb-2 block text-sm font-semibold text-gray-700">
-            目标级别
-          </label>
+          <label className="mb-2 block text-sm font-semibold text-ink">目标级别</label>
           <div className="flex gap-2">
             {LEVELS.map((l) => (
               <button
                 key={l}
                 onClick={() => setLevel(l)}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                  level === l
-                    ? "border-brand-500 bg-brand-50 text-brand-600"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-brand-300"
-                }`}
+                className={`flex-1 ${optionClass(level === l)}`}
               >
                 {l}
               </button>
@@ -96,20 +95,19 @@ export function StartInterview() {
           </div>
         </div>
 
-        {error && (
-          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-            {error}
-          </p>
-        )}
+        {error && <div className="mt-4"><ErrorBanner>{error}</ErrorBanner></div>}
 
-        <button
+        <Button
           onClick={handleStart}
-          disabled={loading}
-          className="mt-6 w-full rounded-xl bg-brand-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
+          loading={loading}
+          fullWidth
+          size="lg"
+          className="mt-6"
+          leftIcon={!loading ? <Icon name="play" size={18} /> : undefined}
         >
           {loading ? "面试官准备中..." : "开始面试"}
-        </button>
-      </div>
+        </Button>
+      </Card>
     </div>
   );
 }

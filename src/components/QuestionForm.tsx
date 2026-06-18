@@ -3,40 +3,47 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DIFFICULTIES } from "@/lib/directions";
+import { RichEditor } from "@/components/RichEditor";
+import {
+  Button,
+  ErrorBanner,
+  Field,
+  HintBanner,
+  Icon,
+  Input,
+  Select,
+} from "@/components/ui";
 
 export interface QuestionFormValues {
   difficulty: string;
   title: string;
   body: string;
   referenceAnswer: string;
+  detailedAnswer: string;
   tags: string;
   topicId: string | null;
 }
 
-// 话题下拉用：扁平、带缩进层级名（如「AI面试 / RAG系统」）
 export interface TopicOption {
   id: string;
   label: string;
 }
 
 interface Props {
-  // 编辑模式传 questionId 和初始值；新建模式不传
   questionId?: string;
   initial?: QuestionFormValues;
-  // 当前用户的话题选项（含层级路径），用于归类
   topicOptions: TopicOption[];
-  // 个人方向，仅用于展示提示（方向由后端按个人方向写入）
   direction: string;
-  // 新建时要求必须选具体话题（不给「未分类」选项）；编辑时保留「未分类」
   requireTopic?: boolean;
 }
 
 function makeEmpty(topicId: string | null): QuestionFormValues {
   return {
-    difficulty: DIFFICULTIES[1], // 默认「中等」
+    difficulty: DIFFICULTIES[1],
     title: "",
     body: "",
     referenceAnswer: "",
+    detailedAnswer: "",
     tags: "",
     topicId,
   };
@@ -56,16 +63,28 @@ export function QuestionForm({
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   function set<K extends keyof QuestionFormValues>(key: K, v: QuestionFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: v }));
   }
 
+  // 继续添加：保留话题分类和难度（批量录入同一分类下通常一致），清空其余字段
+  function continueAdding() {
+    setValues((prev) => ({
+      ...makeEmpty(prev.topicId),
+      difficulty: prev.difficulty,
+      topicId: prev.topicId,
+    }));
+    setCreatedId(null);
+    setError("");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!values.title.trim() || !values.body.trim()) {
-      setError("请填写标题和题目内容");
+    if (!values.title.trim()) {
+      setError("请填写标题");
       return;
     }
     if (requireTopic && !values.topicId) {
@@ -86,8 +105,13 @@ export function QuestionForm({
         setError(data.error || "保存失败");
         return;
       }
-      const targetId = isEdit ? questionId : data.id;
-      router.push(`/practice/${targetId}`);
+      if (isEdit) {
+        router.push(`/practice/${questionId}`);
+        router.refresh();
+        return;
+      }
+      // 新建成功：不跳转，留在表单页，给出「继续添加 / 查看」两个出口
+      setCreatedId(data.id);
       router.refresh();
     } catch {
       setError("网络错误，请稍后重试");
@@ -96,36 +120,25 @@ export function QuestionForm({
     }
   }
 
-  const inputClass =
-    "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            难度
-          </label>
-          <select
+        <Field label="难度">
+          <Select
             value={values.difficulty}
             onChange={(e) => set("difficulty", e.target.value)}
-            className={inputClass}
           >
             {DIFFICULTIES.map((d) => (
               <option key={d} value={d}>
                 {d}
               </option>
             ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            话题分类{requireTopic && <span className="text-red-500"> *</span>}
-          </label>
-          <select
+          </Select>
+        </Field>
+        <Field label="话题分类" required={requireTopic}>
+          <Select
             value={values.topicId ?? ""}
             onChange={(e) => set("topicId", e.target.value || null)}
-            className={inputClass}
           >
             {requireTopic ? (
               <option value="" disabled>
@@ -139,83 +152,103 @@ export function QuestionForm({
                 {t.label}
               </option>
             ))}
-          </select>
-        </div>
+          </Select>
+        </Field>
       </div>
 
-      <p className="text-xs text-gray-400">
+      <p className="flex items-center gap-1 text-xs text-muted">
+        <Icon name="info" size={12} />
         方向跟随你的个人方向（当前：{direction}），无需逐题选择。
       </p>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">标题</label>
-        <input
+      <Field label="标题">
+        <Input
           type="text"
           value={values.title}
           onChange={(e) => set("title", e.target.value)}
-          required
-          className={inputClass}
           placeholder="一句话概括这道题问什么"
         />
-      </div>
+      </Field>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">题目内容</label>
-        <textarea
-          value={values.body}
-          onChange={(e) => set("body", e.target.value)}
-          rows={5}
-          required
-          className={`${inputClass} resize-y leading-relaxed`}
-          placeholder="完整的题干描述"
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          参考答案 <span className="font-normal text-gray-400">（选填，用于 AI 点评对照）</span>
-        </label>
-        <textarea
+      <Field
+        label="标准答案"
+        hint="面试场景下的一句话/要点答案，用于 AI 点评对照。可点 AI 排版自动整理版式"
+      >
+        <RichEditor
           value={values.referenceAnswer}
-          onChange={(e) => set("referenceAnswer", e.target.value)}
-          rows={6}
-          className={`${inputClass} resize-y leading-relaxed`}
-          placeholder="标准答案或答题要点，留空也可以"
+          onChange={(html) => set("referenceAnswer", html)}
+          placeholder="粘贴或输入标准答案，支持从语雀等工具直接粘贴带格式内容..."
+          minHeight="140px"
+          enableAiFormat
+          aiFormatKind="standard"
         />
-      </div>
+      </Field>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          标签 <span className="font-normal text-gray-400">（用英文逗号分隔，如 缓存,并发）</span>
-        </label>
-        <input
+      <Field
+        label="详细答案"
+        hint="选填，可包含落地实现、扩展细节、坑点等，默认不展示给答题者。可点 AI 排版自动整理版式"
+      >
+        <RichEditor
+          value={values.detailedAnswer}
+          onChange={(html) => set("detailedAnswer", html)}
+          placeholder="可选：补充落地实现、源码细节、扩展阅读等更深入的内容..."
+          minHeight="140px"
+          enableAiFormat
+          aiFormatKind="detailed"
+        />
+      </Field>
+
+      <Field label="标签" hint="用英文逗号分隔，如 缓存,并发">
+        <Input
           type="text"
           value={values.tags}
           onChange={(e) => set("tags", e.target.value)}
-          className={inputClass}
           placeholder="缓存,并发,JVM"
         />
-      </div>
+      </Field>
 
-      {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+      {error && <ErrorBanner>{error}</ErrorBanner>}
+
+      {createdId && !isEdit && (
+        <div className="animate-fade-in space-y-3">
+          <HintBanner variant="success">
+            题目已创建成功。
+          </HintBanner>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              onClick={continueAdding}
+              leftIcon={<Icon name="plus" size={16} />}
+            >
+              继续添加
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                router.push(`/practice/${createdId}`);
+                router.refresh();
+              }}
+              leftIcon={<Icon name="arrow-right" size={16} />}
+            >
+              查看刚创建的题目
+            </Button>
+          </div>
+        </div>
       )}
 
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
-        >
+      <div className="flex gap-2">
+        <Button type="submit" loading={loading} size="lg">
           {loading ? "保存中..." : isEdit ? "保存修改" : "创建题目"}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="secondary"
+          size="lg"
           onClick={() => router.back()}
-          className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
         >
           取消
-        </button>
+        </Button>
       </div>
     </form>
   );

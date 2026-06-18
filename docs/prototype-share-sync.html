@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<title>分享与同步 · 原型</title>
+<style>
+  :root {
+    --bg: #f7f7f8;
+    --card: #ffffff;
+    --line: #e5e7eb;
+    --ink: #111827;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --green: #16a34a;
+    --green-soft: #dcfce7;
+    --amber: #d97706;
+    --amber-soft: #fef3c7;
+    --red: #dc2626;
+    --red-soft: #fee2e2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font: 14px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--ink);
+  }
+  .page { max-width: 920px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 28px 0 8px; color: var(--muted); font-weight: 600; }
+  h3 { font-size: 14px; margin: 0 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 16px; }
+  .frame {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px; margin: 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .nav {
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 16px;
+  }
+  .nav .logo { font-weight: 600; }
+  .nav .spacer { flex: 1; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px;
+    background: #fff; cursor: pointer; font-size: 13px; color: var(--ink);
+    text-decoration: none;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { background: #1d4ed8; }
+  .btn.sm { padding: 3px 8px; font-size: 12px; }
+  .btn.ghost { border-color: transparent; background: transparent; }
+  .input {
+    padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px;
+    width: 100%; background: #fff;
+  }
+  .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 500;
+  }
+  .badge.pub { background: var(--green-soft); color: var(--green); }
+  .badge.priv { background: #f3f4f6; color: var(--muted); }
+  .badge.inherit { background: var(--amber-soft); color: var(--amber); }
+  .badge.off { background: var(--red-soft); color: var(--red); }
+  .tree { font-size: 13px; }
+  .tree ul { list-style: none; padding-left: 18px; margin: 4px 0; border-left: 1px dashed var(--line); }
+  .tree > ul { padding-left: 0; border-left: none; }
+  .tree li { padding: 4px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tree .name { min-width: 120px; }
+  .tree .acts { display: flex; gap: 4px; align-items: center; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .check { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+  .card-list { display: grid; gap: 8px; }
+  .card-item {
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+    display: flex; align-items: center; gap: 10px; background: #fff;
+  }
+  .card-item:hover { border-color: var(--accent); }
+  .card-item .title { font-weight: 500; }
+  .card-item .meta { color: var(--muted); font-size: 12px; }
+  .progress {
+    height: 6px; background: #f3f4f6; border-radius: 3px; overflow: hidden; margin: 8px 0;
+  }
+  .progress > div { height: 100%; background: var(--accent); transition: width .3s; }
+  .alert {
+    padding: 8px 12px; border-radius: 6px; font-size: 13px; margin: 8px 0;
+  }
+  .alert.info { background: var(--accent-soft); color: #1e40af; }
+  .alert.warn { background: var(--amber-soft); color: var(--amber); }
+  .alert.ok { background: var(--green-soft); color: var(--green); }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+  .tab { padding: 8px 12px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--muted); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .stack { display: grid; gap: 8px; }
+  .section-title { font-size: 12px; color: var(--muted); margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
+  .kbd { font-family: ui-monospace, monospace; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-size: 12px; border: 1px solid var(--line); }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+  .anno {
+    background: #fffbeb; border-left: 3px solid var(--amber); padding: 8px 12px;
+    font-size: 12px; color: #78350f; margin: 8px 0; border-radius: 0 6px 6px 0;
+  }
+  .anno b { color: #92400e; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>分享与同步 · 交互原型</h1>
+<p class="lead">用户级分享码 · 公开主页 · 题库/目录/试卷同步。以下为关键页面与流程，非最终视觉。</p>
+
+<!-- ============ 1. 我的分享码 ============ -->
+<h2>① 我的分享码（设置页内）</h2>
+<div class="frame">
+  <div class="row" style="justify-content: space-between;">
+    <h3 style="margin:0;">我的分享码</h3>
+    <div>
+      <button class="btn sm">复制链接</button>
+      <button class="btn sm">重新生成</button>
+    </div>
+  </div>
+  <div class="row" style="margin-top: 12px;">
+    <span class="muted">分享码：</span>
+    <span class="kbd">K7P3M9XR</span>
+    <span class="muted">·</span>
+    <span class="muted">链接：</span>
+    <span class="kbd">/u/K7P3M9XR</span>
+  </div>
+  <div class="anno">
+    <b>说明：</b>注册时自动生成 8 位码。重新生成后旧码立即失效，已分享的链接无法再访问。
+    别人凭此码进入你的公开主页，只能看到你标记为"公开"的内容。
+  </div>
+</div>
+
+<!-- ============ 2. 一键公开设置（题库管理页） ============ -->
+<h2>② 一键公开 / 关闭（题库管理页）</h2>
+<div class="frame">
+  <div class="row" style="justify-content: space-between; margin-bottom: 8px;">
+    <h3 style="margin:0;">我的题库</h3>
+    <div class="row">
+      <button class="btn sm primary">全部公开</button>
+      <button class="btn sm">全部关闭</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="badge pub">公开</span> 任何人凭码可见，进广场</span>
+    <span><span class="badge inherit">继承</span> 跟父目录</span>
+    <span><span class="badge off">强制关闭</span> 父公开但此项不可见</span>
+    <span><span class="badge priv">私有</span> 仅自己</span>
+  </div>
+
+  <div class="tree" style="margin-top: 12px;">
+    <ul>
+      <li>
+        <span class="name">📁 前端基础</span>
+        <span class="badge pub">公开</span>
+        <span class="acts">
+          <button class="btn sm ghost">设为公开</button>
+          <button class="btn sm ghost">强制关闭</button>
+        </span>
+        <ul>
+          <li>
+            <span class="name">└ HTML/CSS</span>
+            <span class="badge inherit">继承</span>
+            <span class="muted">(随父公开)</span>
+            <span class="acts"><button class="btn sm ghost">强制关闭</button></span>
+            <ul>
+              <li><span class="name">　└ 盒模型</span><span class="badge inherit">继承</span><span class="muted">(随父公开)</span></li>
+              <li><span class="name">　└ Flex 布局</span><span class="badge off">强制关闭</span><span class="muted">(父公开，此项隐藏)</span></li>
+            </ul>
+          </li>
+          <li>
+            <span class="name">└ JavaScript</span>
+            <span class="badge inherit">继承</span>
+            <span class="muted">(随父公开)</span>
+          </li>
+          <li>
+            <span class="name">└ 框架原理</span>
+            <span class="badge off">强制关闭</span>
+            <span class="muted">(父公开，此子树隐藏)</span>
+            <ul>
+              <li><span class="name">　└ React</span><span class="badge inherit">继承</span><span class="muted">(父已关闭，不可见)</span></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <span class="name">📁 算法</span>
+        <span class="badge priv">私有</span>
+        <span class="acts"><button class="btn sm ghost">设为公开</button></span>
+        <ul>
+          <li><span class="name">└ 动态规划</span><span class="badge priv">私有</span></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="anno">
+    <b>可见性传播规则：</b>根目录设公开 → 整棵子树默认公开。子项可单独"强制关闭"。
+    强制关闭的子树内，再设公开也无效（被祖先的强制关闭覆盖）。
+    计算可见性时从根向下传播，遇到 force-off 即截断。
+  </div>
+</div>
+
+<!-- ============ 3. 导航栏入口 ============ -->
+<h2>③ 导航栏同步入口</h2>
+<div class="frame">
+  <div class="nav">
+    <span class="logo">面试 Agent</span>
+    <a class="btn ghost" href="#">首页</a>
+    <a class="btn ghost" href="#">题库</a>
+    <a class="btn ghost" href="#">广场</a>
+    <a class="btn ghost" href="#">模拟面试</a>
+    <span class="spacer"></span>
+    <button class="btn primary">📥 同步他人题库</button>
+    <span class="avatar">龙</span>
+  </div>
+  <div class="anno">点击「同步他人题库」弹出输码框（下一屏）。</div>
+</div>
+
+<!-- ============ 4. 输码弹窗 ============ -->
+<h2>④ 输入分享码</h2>
+<div class="frame" style="max-width: 420px; margin: 12px auto;">
+  <h3>输入分享码</h3>
+  <p class="muted">输入对方的 8 位分享码，查看 TA 公开的题库与试卷。</p>
+  <div class="stack">
+    <input class="input" placeholder="例如 K7P3M9XR" value="K7P3M9XR" />
+    <div class="row" style="justify-content: flex-end; gap: 8px;">
+      <button class="btn">取消</button>
+      <button class="btn primary">进入主页</button>
+    </div>
+  </div>
+  <div class="alert info" style="margin-top: 12px;">
+    💡 也可以直接访问 <span class="kbd">/u/K7P3M9XR</span>
+  </div>
+</div>
+
+<!-- ============ 5. 他人公开主页 ============ -->
+<h2>⑤ 他人公开主页（/u/CODE）</h2>
+<div class="frame">
+  <div class="row" style="gap: 12px; margin-bottom: 12px;">
+    <span class="avatar" style="background: var(--green-soft); color: var(--green);">李</span>
+    <div>
+      <div style="font-weight: 600;">李同学的题库</div>
+      <div class="muted">公开目录 5 · 公开题目 47 · 公开试卷 3</div>
+    </div>
+    <span class="spacer" style="flex:1;"></span>
+    <button class="btn primary">全部同步到我的库</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active">题库</div>
+    <div class="tab">试卷</div>
+  </div>
+
+  <div class="section-title">目录树（可勾选同步）</div>
+  <div class="tree">
+    <div class="row" style="margin-bottom: 8px;">
+      <label class="check"><input type="checkbox" checked /> 全选</label>
+      <span class="muted">已选 3 个目录 · 32 道题</span>
+    </div>
+    <ul>
+      <li>
+        <label class="check"><input type="checkbox" checked /></label>
+        <span class="name">📁 前端基础</span>
+        <span class="badge pub">公开</span>
+        <span class="muted">12 题</span>
+        <ul>
+          <li>
+            <label class="check"><input type="checkbox" checked /></label>
+            <span class="name">└ HTML/CSS</span>
+            <span class="muted">5 题</span>
+          </li>
+          <li>
+            <label class="check"><input type="checkbox" checked /></label>
+            <span class="name">└ JavaScript</span>
+            <span class="muted">7 题</span>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <label class="check"><input type="checkbox" /></label>
+        <span class="name">📁 后端基础</span>
+        <span class="muted">15 题</span>
+      </li>
+      <li>
+        <label class="check"><input type="checkbox" /></label>
+        <span class="name">📁 系统设计</span>
+        <span class="muted">20 题</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="row" style="justify-content: space-between; margin-top: 16px;">
+    <span class="muted">勾选后点下方按钮，所选目录整棵子树复制为你的独立副本</span>
+    <button class="btn primary">同步所选 (3 目录 / 32 题)</button>
+  </div>
+
+  <div class="anno">
+    <b>同步语义：</b>复制独立副本，与原作者无关。可再编辑、再分享。
+    <b>冲突处理：</b>同名目录、同题干题目跳过，只同步本地没有的。
+  </div>
+</div>
+
+<!-- ============ 6. 同步进度 ============ -->
+<h2>⑥ 同步进度（异步）</h2>
+<div class="frame">
+  <h3>正在同步…</h3>
+  <div class="progress"><div style="width: 65%"></div></div>
+  <div class="row" style="justify-content: space-between;">
+    <span class="muted">21 / 32 道题 · 2 / 3 个目录</span>
+    <span class="muted">预计还需 8 秒</span>
+  </div>
+  <div class="alert info" style="margin-top: 12px;">
+    <div>✓ 目录「前端基础」已创建</div>
+    <div>✓ 目录「HTML/CSS」已创建</div>
+    <div>⏳ 正在同步题目「盒模型」…</div>
+    <div class="muted">跳过：本地已存在「闭包」(同题干)</div>
+  </div>
+</div>
+
+<!-- ============ 7. 同步完成 ============ -->
+<h2>⑦ 同步完成</h2>
+<div class="frame">
+  <div class="alert ok">
+    ✅ 同步完成：新增 28 题 · 新增 3 目录 · 跳过 4 题（本地已存在）
+  </div>
+  <div class="row" style="gap: 8px;">
+    <button class="btn primary">查看我的题库</button>
+    <button class="btn">查看同步记录</button>
+  </div>
+</div>
+
+<!-- ============ 8. 试卷 Tab ============ -->
+<h2>⑧ 试卷同步（公开主页 · 试卷 Tab）</h2>
+<div class="frame">
+  <div class="tabs">
+    <div class="tab">题库</div>
+    <div class="tab active">试卷</div>
+  </div>
+  <div class="card-list">
+    <div class="card-item">
+      <div style="flex:1;">
+        <div class="title">前端校招冲刺卷一</div>
+        <div class="meta">20 题 · 60 分钟 · 公开</div>
+      </div>
+      <button class="btn sm primary">同步试卷</button>
+    </div>
+    <div class="card-item">
+      <div style="flex:1;">
+        <div class="title">JavaScript 专项</div>
+        <div class="meta">15 题 · 45 分钟 · 公开</div>
+      </div>
+      <button class="btn sm primary">同步试卷</button>
+    </div>
+    <div class="card-item">
+      <div style="flex:1;">
+        <div class="title">系统设计大厂卷</div>
+        <div class="meta">8 题 · 不限时 · 公开</div>
+      </div>
+      <button class="btn sm primary">同步试卷</button>
+    </div>
+  </div>
+  <div class="anno">
+    <b>试卷同步：</b>试卷 + 内含题目一起复制为独立副本。若本地已有同题干题目，跳过该题但保留试卷引用（指向本地已有题）。
+  </div>
+</div>
+
+<!-- ============ 9. 广场页（公开题目流） ============ -->
+<h2>⑨ 广场页（公开题目展示）</h2>
+<div class="frame">
+  <h3>广场 · 公开题目</h3>
+  <p class="muted">所有标记公开的题目都在这里展示，可按方向/难度筛选。</p>
+  <div class="card-list">
+    <div class="card-item">
+      <span class="badge pub">公开</span>
+      <div style="flex:1;">
+        <div class="title">实现一个防抖函数</div>
+        <div class="meta">前端 · 中等 · by 李同学 · 👁 1.2k · ❤ 86 · 🔁 23</div>
+      </div>
+      <button class="btn sm">查看</button>
+      <button class="btn sm primary">同步到我的库</button>
+    </div>
+    <div class="card-item">
+      <span class="badge pub">公开</span>
+      <div style="flex:1;">
+        <div class="title">描述浏览器事件循环</div>
+        <div class="meta">前端 · 困难 · by 张同学 · 👁 890 · ❤ 54 · 🔁 12</div>
+      </div>
+      <button class="btn sm">查看</button>
+      <button class="btn sm primary">同步到我的库</button>
+    </div>
+  </div>
+  <div class="anno">现有 <span class="kbd">/explore</span> 复用，题目已是 <span class="kbd">visibility=public</span> 即进广场。</div>
+</div>
+
+<!-- ============ 10. 同步记录 ============ -->
+<h2>⑩ 同步记录（可选，便于回溯）</h2>
+<div class="frame">
+  <h3>我的同步记录</h3>
+  <div class="card-list">
+    <div class="card-item">
+      <div style="flex:1;">
+        <div class="title">从 李同学 同步</div>
+        <div class="meta">2026-06-18 14:30 · 新增 28 题 / 3 目录 / 跳过 4 题</div>
+      </div>
+      <button class="btn sm">查看明细</button>
+    </div>
+    <div class="card-item">
+      <div style="flex:1;">
+        <div class="title">从 张同学 同步试卷「系统设计大厂卷」</div>
+        <div class="meta">2026-06-17 09:12 · 新增 8 题 / 1 试卷</div>
+      </div>
+      <button class="btn sm">查看明细</button>
+    </div>
+  </div>
+</div>
+
+<hr>
+<h2>关键交互小结</h2>
+<div class="stack">
+  <div>1. <b>生成码</b>：注册自动生成 8 位，设置页可重置</div>
+  <div>2. <b>一键公开</b>：题库管理页有"全部公开/全部关闭"按钮；目录/题目可单独切换"公开 / 继承 / 强制关闭"</div>
+  <div>3. <b>凭码进入</b>：导航栏"同步他人题库"→ 输码 → 跳转 <span class="kbd">/u/CODE</span></div>
+  <div>4. <b>选择同步</b>：勾选目录（整棵子树）或点"全部同步"</div>
+  <div>5. <b>冲突跳过</b>：同名目录、同题干题目跳过</div>
+  <div>6. <b>试卷同步</b>：试卷 Tab，试卷 + 题目一起复制</div>
+  <div>7. <b>广场展示</b>：公开题目自动进 <span class="kbd">/explore</span></div>
+</div>
+
+</div>
+</body>
+</html>

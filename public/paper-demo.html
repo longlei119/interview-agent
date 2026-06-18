@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>试卷功能原型 — AI 面试助手</title>
+<style>
+/* ── 与项目 Tailwind 设计体系对齐 ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --brand-50:  #eef4ff; --brand-100: #d9e6ff;
+  --brand-500: #3b6cff; --brand-600: #2f55e0; --brand-700: #2544b8;
+  --gray-50: #f9fafb;  --gray-100:#f3f4f6; --gray-200:#e5e7eb;
+  --gray-300:#d1d5db;  --gray-400:#9ca3af; --gray-500:#6b7280;
+  --gray-600:#4b5563;  --gray-700:#374151; --gray-800:#1f2937; --gray-900:#111827;
+  --bg: #f7f8fa; --white: #fff;
+  --green-100:#dcfce7; --green-700:#15803d;
+  --amber-100:#fef3c7; --amber-700:#b45309;
+  --red-100:#fee2e2;   --red-700:#b91c1c;
+  --violet-100:#ede9fe; --violet-700:#6d28d9;
+  --emerald-50:#ecfdf5; --emerald-600:#059669;
+  --radius:8px; --radius-lg:12px; --radius-xl:12px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+  --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  --font: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+body {
+  font-family: var(--font); background: var(--bg); color: var(--gray-900);
+  min-height: 100vh; line-height: 1.6; -webkit-font-smoothing: antialiased;
+}
+.container { max-width: 1024px; margin: 0 auto; padding: 24px 16px 64px; }
+
+/* ── Header ── */
+.header { display:flex; align-items:center; margin-bottom:24px; }
+.header .logo { display:flex; align-items:center; gap:8px; font-size:18px; font-weight:700; color:var(--brand-600); text-decoration:none; }
+.header .logo .icon { font-size:22px; }
+
+/* ── Breadcrumb ── */
+.breadcrumb { font-size:13px; color:var(--gray-500); margin-bottom:20px; }
+.breadcrumb a { color:var(--brand-600); text-decoration:none; cursor:pointer; }
+.breadcrumb a:hover { text-decoration:underline; }
+.breadcrumb span { color:var(--gray-300); margin:0 6px; }
+
+/* ── Tab Bar ── */
+.tab-bar { display:flex; gap:4px; margin-bottom:24px; }
+.tab-btn {
+  padding:8px 20px; border:none; background:transparent;
+  font-family:var(--font); font-size:14px; font-weight:500;
+  color:var(--gray-600); cursor:pointer; border-radius:var(--radius-lg);
+  transition:all .15s;
+}
+.tab-btn:hover { color:var(--brand-600); background:var(--brand-50); }
+.tab-btn.active { background:var(--brand-500); color:#fff; font-weight:600; }
+
+/* ── View 切换 ── */
+.view { display:none; animation: fadeIn .2s ease; }
+.view.active { display:block; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+/* ═══ 试卷列表 ═══ */
+.list-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.list-top h1 { font-size:24px; font-weight:700; color:var(--gray-900); }
+.paper-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; }
+.paper-card {
+  background:var(--white); border:1px solid var(--gray-200); border-radius:var(--radius-xl);
+  padding:20px; box-shadow:var(--shadow-sm);
+  transition: all .15s;
+}
+.paper-card:hover { border-color:var(--brand-300); box-shadow:var(--shadow); }
+.paper-card .pc-title { font-size:16px; font-weight:700; color:var(--gray-900); margin-bottom:8px; }
+.paper-card .pc-meta { display:flex; flex-wrap:wrap; gap:10px; font-size:13px; color:var(--gray-500); margin-bottom:14px; }
+.paper-card .pc-actions { display:flex; gap:8px; }
+.paper-card .pc-stat { font-size:12px; color:var(--gray-400); }
+.paper-card .pc-stat em { font-style:normal; font-weight:600; color:var(--gray-600); }
+
+.empty-state {
+  text-align:center; padding:80px 20px;
+  background:var(--white); border:1px dashed var(--gray-300); border-radius:var(--radius-xl);
+  color:var(--gray-400);
+}
+
+/* ── 按钮体系 ── */
+.btn {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:8px 16px; border:none; border-radius:var(--radius-lg);
+  font-family:var(--font); font-size:14px; font-weight:600; cursor:pointer;
+  transition:all .15s;
+}
+.btn-primary { background:var(--brand-500); color:#fff; }
+.btn-primary:hover { background:var(--brand-600); }
+.btn-outline { background:var(--white); color:var(--gray-600); border:1px solid var(--gray-200); }
+.btn-outline:hover { background:var(--brand-50); color:var(--brand-600); border-color:var(--brand-300); }
+.btn-ghost { background:transparent; color:var(--gray-500); }
+.btn-ghost:hover { background:var(--gray-100); color:var(--gray-700); }
+.btn-danger { background:transparent; color:var(--gray-400); }
+.btn-danger:hover { background:var(--red-100); color:var(--red-700); }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn-sm { padding:5px 12px; font-size:13px; }
+
+/* ═══ 创建试卷 ═══ */
+.create-layout { display:flex; gap:20px; align-items:flex-start; }
+.sidebar { width:240px; flex-shrink:0; }
+.sidebar-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.sidebar-header span { font-size:12px; font-weight:600; color:var(--gray-400); }
+.sidebar-header button { border:none; background:none; font-size:12px; font-weight:500; color:var(--brand-600); cursor:pointer; padding:2px 8px; border-radius:6px; }
+.sidebar-header button:hover { background:var(--brand-50); }
+.topic-card { background:var(--white); border:1px solid var(--gray-200); border-radius:var(--radius-xl); padding:6px; font-size:14px; }
+.topic-item { display:flex; align-items:center; gap:4px; padding:5px 6px; border-radius:var(--radius-lg); cursor:pointer; transition:background .1s; }
+.topic-item:hover { background:var(--gray-50); }
+.topic-item.active { background:var(--brand-500); color:#fff; }
+.topic-item .arrow { width:16px; height:16px; display:flex; align-items:center; justify-content:center; font-size:10px; opacity:.6; flex-shrink:0; }
+.topic-item .name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.topic-item .cnt { font-size:12px; opacity:.7; flex-shrink:0; }
+.topic-item.active .cnt { opacity:.85; }
+.topic-children { padding-left:12px; }
+
+.main-area { flex:1; min-width:0; }
+.paper-meta { display:flex; gap:16px; margin-bottom:16px; }
+.meta-field { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--gray-600); }
+.meta-label { font-weight:600; white-space:nowrap; flex-shrink:0; }
+.meta-unit  { color:var(--gray-400); font-size:13px; white-space:nowrap; }
+.input {
+  padding:8px 12px; border:1px solid var(--gray-200); border-radius:var(--radius-lg);
+  font-family:var(--font); font-size:14px; background:var(--white); outline:none;
+  transition:border-color .15s;
+}
+.input:focus { border-color:var(--brand-500); }
+.input.title { flex:1; min-width:200px; }
+.input.time { width:72px; text-align:center; }
+
+.toolbar { display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+.search {
+  flex:1; min-width:160px; padding:7px 12px;
+  border:1px solid var(--gray-200); border-radius:var(--radius-lg);
+  font-family:var(--font); font-size:13px; background:var(--white); outline:none;
+}
+.search:focus { border-color:var(--brand-500); }
+.search::placeholder { color:var(--gray-400); }
+.chips { display:flex; gap:6px; }
+.chip {
+  padding:5px 14px; border:1px solid var(--gray-200); border-radius:9999px;
+  background:var(--white); font-family:var(--font); font-size:13px;
+  color:var(--gray-600); cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.chip:hover { border-color:#bcc7f8; }
+.chip.active { background:var(--brand-500); color:#fff; border-color:var(--brand-500); }
+
+.q-list-wrap { background:var(--white); border:1px solid var(--gray-200); border-radius:var(--radius-xl); overflow:hidden; }
+.q-list { max-height:400px; overflow-y:auto; }
+.q-item { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; cursor:pointer; transition:background .1s; }
+.q-item + .q-item { border-top:1px solid var(--gray-100); }
+.q-item:hover { background:var(--gray-50); }
+.q-item.selected { background:var(--brand-50); }
+.q-check {
+  width:20px; height:20px; border:2px solid var(--gray-300); border-radius:6px;
+  flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; transition:all .15s;
+}
+.q-item.selected .q-check { background:var(--brand-500); border-color:var(--brand-500); }
+.q-item.selected .q-check::after { content:"✓"; color:#fff; font-size:12px; font-weight:700; }
+.q-info { flex:1; min-width:0; }
+.q-info .q-title { font-size:14px; font-weight:600; color:var(--gray-900); margin-bottom:6px; line-height:1.4; }
+.q-meta { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--gray-500); }
+.badge { display:inline-block; padding:2px 8px; border-radius:var(--radius); font-size:12px; font-weight:500; line-height:1.4; }
+.badge-easy   { background:var(--green-100); color:var(--green-700); }
+.badge-medium { background:var(--amber-100); color:var(--amber-700); }
+.badge-hard   { background:var(--red-100);  color:var(--red-700); }
+
+.q-list-footer { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-top:1px solid var(--gray-200); }
+.selected-info { font-size:14px; font-weight:600; color:var(--gray-700); }
+.selected-info em { font-style:normal; color:var(--brand-500); font-size:16px; }
+
+/* ═══ 作答 ═══ */
+.take-layout {
+  max-width:720px; margin:0 auto;
+  background:var(--white); border:1px solid var(--gray-200); border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-sm); overflow:hidden;
+}
+.take-top { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; }
+.take-info { display:flex; align-items:center; gap:16px; }
+.take-idx { font-size:14px; font-weight:600; color:var(--gray-700); }
+.take-timer {
+  font-size:14px; font-weight:700; color:var(--gray-700);
+  background:var(--gray-100); padding:4px 12px; border-radius:var(--radius); font-variant-numeric:tabular-nums;
+}
+.take-timer.warning { background:var(--amber-100); color:var(--amber-700); animation:blink .8s infinite; }
+.take-timer.danger  { background:var(--red-100);  color:var(--red-700);  animation:blink .4s infinite; }
+@keyframes blink { 50% { opacity:.5; } }
+.progress-bar { height:3px; background:var(--gray-100); }
+.progress-bar .fill { height:100%; background:var(--brand-500); transition:width .35s ease; }
+.take-body { padding:24px 24px 20px; }
+.take-q-num { font-size:12px; font-weight:600; color:var(--gray-400); letter-spacing:.5px; margin-bottom:8px; }
+.take-paper-title { font-size:13px; font-weight:600; color:var(--brand-600); margin-bottom:12px; }
+.take-q-title { font-size:18px; font-weight:700; color:var(--gray-900); line-height:1.5; margin-bottom:16px; }
+.take-q-body { background:var(--gray-50); border-radius:var(--radius-lg); padding:16px; font-size:14px; line-height:1.7; color:var(--gray-700); margin-bottom:20px; }
+.take-q-body .label { font-size:12px; font-weight:600; color:var(--gray-400); margin-bottom:6px; }
+.take-answer-label { font-size:12px; font-weight:600; color:var(--gray-400); margin-bottom:8px; }
+.take-answer {
+  width:100%; min-height:160px; padding:12px 16px;
+  border:1px solid var(--gray-200); border-radius:var(--radius-lg);
+  font-family:var(--font); font-size:14px; line-height:1.7;
+  resize:vertical; outline:none; transition:border-color .15s;
+}
+.take-answer:focus { border-color:var(--brand-500); }
+.take-footer { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-top:1px solid var(--gray-200); background:var(--gray-50); }
+.take-dots { display:flex; gap:6px; }
+.take-dot { width:10px; height:10px; border-radius:50%; background:var(--gray-200); cursor:pointer; transition:all .15s; }
+.take-dot:hover { background:var(--gray-400); }
+.take-dot.done { background:var(--brand-500); }
+.take-dot.current { background:var(--brand-500); transform:scale(1.35); }
+
+/* ═══ 结果 ═══ */
+.result-layout { max-width:720px; margin:0 auto; }
+.result-hero {
+  background:var(--white); border:1px solid var(--gray-200); border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-sm); padding:36px 24px; text-align:center; margin-bottom:20px;
+}
+.result-score { font-size:64px; font-weight:900; line-height:1; margin-bottom:4px; }
+.result-score.good { color:var(--green-700); }
+.result-score.ok   { color:var(--amber-700); }
+.result-score.bad  { color:var(--red-700); }
+.result-label { font-size:12px; font-weight:500; color:var(--gray-400); margin-bottom:20px; }
+.result-stats { display:flex; justify-content:center; gap:36px; }
+.result-stat .val { font-size:20px; font-weight:700; color:var(--gray-800); }
+.result-stat .lbl { font-size:12px; color:var(--gray-400); margin-top:2px; }
+
+.q-result { background:var(--white); border:1px solid var(--gray-200); border-radius:var(--radius-xl); box-shadow:var(--shadow-sm); margin-bottom:12px; overflow:hidden; }
+.q-result-header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; cursor:pointer; transition:background .15s; }
+.q-result-header:hover { background:var(--gray-50); }
+.q-result-header .q-res-title { font-size:14px; font-weight:600; color:var(--gray-800); }
+.score-pill { padding:3px 10px; border-radius:12px; font-size:12px; font-weight:700; flex-shrink:0; }
+.score-pill.high { background:var(--green-100); color:var(--green-700); }
+.score-pill.mid  { background:var(--amber-100); color:var(--amber-700); }
+.score-pill.low  { background:var(--red-100);  color:var(--red-700); }
+.q-result-body { display:none; padding:0 20px 18px; }
+.q-result.open .q-result-body { display:block; }
+.q-result-section { margin-top:14px; }
+.q-result-section h4 { font-size:12px; font-weight:600; color:var(--gray-400); margin-bottom:6px; }
+.q-result-section .content { font-size:13px; line-height:1.7; padding:12px 16px; border-radius:var(--radius); background:var(--gray-50); color:var(--gray-700); }
+.q-result-section .content.answer { background:var(--brand-50); }
+.feedback-block { margin-top:14px; padding:12px 16px; border-radius:var(--radius); background:var(--violet-100); color:var(--violet-700); font-size:13px; line-height:1.7; }
+.feedback-block strong { color:var(--gray-800); }
+
+/* Toast */
+.toast {
+  position:fixed; top:20px; left:50%;
+  transform:translateX(-50%) translateY(-120px);
+  background:var(--gray-800); color:#fff;
+  padding:10px 24px; border-radius:var(--radius-lg);
+  font-size:14px; font-weight:500; box-shadow:var(--shadow);
+  transition:transform .3s cubic-bezier(.22,1,.36,1); z-index:100;
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+@media (max-width:768px) {
+  .create-layout { flex-direction:column; }
+  .sidebar { width:100%; }
+  .paper-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <a class="logo" href="#"><span class="icon">🎯</span>AI 面试助手</a>
+  </div>
+
+  <!-- Breadcrumb（作答/结果时显示） -->
+  <div class="breadcrumb" id="breadcrumb" style="display:none"></div>
+
+  <!-- Tab Bar（主页可见） -->
+  <div class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" data-tab="list">我的试卷</button>
+    <button class="tab-btn" data-tab="create">创建试卷</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ═══ View: 试卷列表 ═══ -->
+  <div class="view active" id="view-list">
+    <div class="list-top">
+      <h1>我的试卷</h1>
+      <button class="btn btn-primary" onclick="switchTab('create')">+ 创建新试卷</button>
+    </div>
+    <div id="paper-grid"></div>
+  </div>
+
+  <!-- ═══ View: 创建试卷 ═══ -->
+  <div class="view" id="view-create">
+    <div class="paper-meta">
+      <label class="meta-field">
+        <span class="meta-label">试卷标题</span>
+        <input class="input title" id="create-title" placeholder="如：前端基础摸底卷">
+      </label>
+      <label class="meta-field">
+        <span class="meta-label">限时</span>
+        <input class="input time" id="create-timelimit" value="30" type="number" min="1">
+        <span class="meta-unit">分钟</span>
+      </label>
+    </div>
+
+    <div class="create-layout">
+      <aside class="sidebar">
+        <div class="sidebar-header"><span>话题分类</span></div>
+        <div class="topic-card" id="topic-tree"></div>
+      </aside>
+      <div class="main-area">
+        <div class="toolbar">
+          <input class="search" placeholder="搜索题目关键词..." id="search-input">
+          <div class="chips" id="diff-chips">
+            <button class="chip active" data-diff="">全部</button>
+            <button class="chip" data-diff="简单">简单</button>
+            <button class="chip" data-diff="中等">中等</button>
+            <button class="chip" data-diff="困难">困难</button>
+          </div>
+        </div>
+        <div class="q-list-wrap">
+          <div class="q-list" id="q-list"></div>
+          <div class="q-list-footer">
+            <div class="selected-info">已选 <em id="sel-count">0</em> 题</div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline btn-sm" id="btn-clear">清空</button>
+              <button class="btn btn-primary btn-sm" id="btn-save">保存试卷</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ View: 作答 ═══ -->
+  <div class="view" id="view-take">
+    <div class="take-layout">
+      <div class="take-top">
+        <div class="take-info">
+          <span class="take-idx" id="take-idx">第 1/5 题</span>
+          <span id="take-diff-badge"></span>
+        </div>
+        <span class="take-timer" id="take-timer">29:48</span>
+      </div>
+      <div class="progress-bar"><div class="fill" id="progress-fill" style="width:20%"></div></div>
+      <div class="take-body">
+        <div class="take-paper-title" id="take-paper-title"></div>
+        <div class="take-q-num" id="take-q-num">题目 1</div>
+        <div class="take-q-title" id="take-q-title"></div>
+        <div class="take-q-body">
+          <div class="label">题目描述</div>
+          <span id="take-q-body"></span>
+        </div>
+        <div class="take-answer-label">你的回答</div>
+        <textarea class="take-answer" id="take-answer" placeholder="在此输入你的答案..."></textarea>
+      </div>
+      <div class="take-footer">
+        <div class="take-dots" id="take-dots"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" id="btn-prev" disabled>← 上一题</button>
+          <button class="btn btn-primary btn-sm" id="btn-next">下一题 →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ View: 结果 ═══ -->
+  <div class="view" id="view-result">
+    <div class="result-layout">
+      <div class="result-hero">
+        <div class="result-score good" id="result-score">82</div>
+        <div class="result-label">总分（100 分制）</div>
+        <div class="result-stats">
+          <div class="result-stat"><div class="val" id="result-pass">4/5</div><div class="lbl">合格（≥60）</div></div>
+          <div class="result-stat"><div class="val" id="result-time">22分38秒</div><div class="lbl">实际用时</div></div>
+        </div>
+      </div>
+      <div id="result-details"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── Mock 数据 ── */
+const allQuestions = [
+  { id:"q1", title:"解释 JavaScript 闭包及其应用场景", difficulty:"中等", topicId:"t1a", topic:"闭包与作用域",
+    body:"请详细解释 JavaScript 中闭包（Closure）的概念、形成原理，并列举至少三个实际开发中的应用场景。",
+    reference:"闭包是指函数能够访问其词法作用域外部变量的能力。形成原理：当内部函数被返回或传递时，它会保留对其定义时作用域的引用。应用场景：(1) 数据私有化/模块模式；(2) 柯里化和偏函数；(3) 事件处理中的回调保持状态；(4) 循环中创建独立作用域。" },
+  { id:"q2", title:"React Hooks 使用规则及常见陷阱", difficulty:"中等", topicId:"t1b", topic:"Hooks",
+    body:"请说明 React Hooks 的两条核心使用规则，并举例说明如果违反规则会引发什么问题。",
+    reference:"规则一：只在函数组件顶层调用 Hooks，不能在循环、条件、嵌套函数中调用。规则二：只在 React 函数组件或自定义 Hook 中调用 Hooks。违反规则一会导致 Hooks 调用顺序不一致，状态混乱；违反规则二无法享受到 React 的 Hook 管理机制。" },
+  { id:"q3", title:"CSS 盒模型与 BFC", difficulty:"简单", topicId:"t2a", topic:"CSS布局",
+    body:"请解释标准盒模型和 IE 盒模型的区别，并说明 BFC（块级格式化上下文）的触发方式和作用。",
+    reference:"标准盒模型：width = content；IE盒模型：width = content + padding + border。BFC 触发方式：overflow非visible、float非none、position absolute/fixed、display inline-block/flex。作用：清除浮动、防止外边距合并、创建独立渲染区域。" },
+  { id:"q4", title:"HTTP 缓存策略详解", difficulty:"中等", topicId:"t3a", topic:"网络",
+    body:"请对比强缓存（Expires/Cache-Control）和协商缓存（ETag/Last-Modified）的工作机制，以及在实际项目中如何制定缓存策略。",
+    reference:"强缓存：浏览器直接从本地缓存读取，不发请求。Cache-Control 优先级高于 Expires。协商缓存：浏览器发送请求，服务器验证资源是否变化，304 表示未修改。ETag 优先级高于 Last-Modified。实践：HTML 用协商缓存，静态资源（CSS/JS/图片）用强缓存+文件名 Hash。" },
+  { id:"q5", title:"TypeScript 泛型与类型推断", difficulty:"困难", topicId:"t4a", topic:"TypeScript",
+    body:"请解释 TypeScript 泛型约束（extends）、条件类型和 infer 关键字的用法，并给出一个实用的工具类型示例。",
+    reference:"泛型约束（extends）限制泛型参数必须满足某类型。条件类型：T extends U ? X : Y 根据条件返回不同类型。infer 在条件类型中提取类型变量。示例：type ReturnPromise<T> = T extends Promise<infer U> ? U : T 可以提取 Promise 的包裹类型。" },
+  { id:"q6", title:"浏览器事件循环与微任务", difficulty:"简单", topicId:"t5a", topic:"异步编程",
+    body:"请描述浏览器事件循环（Event Loop）的运作机制，包括宏任务、微任务和渲染时机的关系。",
+    reference:"事件循环持续从宏任务队列取任务执行。每个宏任务执行完后，清空所有微任务队列（Promise、MutationObserver），然后检查是否需要渲染。宏任务：setTimeout、setInterval、I/O、事件回调。微任务：Promise.then、queueMicrotask。一个宏任务 → 所有微任务 → 可选渲染 → 下一个宏任务。" },
+  { id:"q7", title:"Vue 3 响应式原理", difficulty:"困难", topicId:"t2b", topic:"Vue",
+    body:"请对比 Vue 2 的 Object.defineProperty 和 Vue 3 的 Proxy 响应式系统，说明 Vue 3 解决了哪些 Vue 2 的痛点。",
+    reference:"Vue 2 使用 Object.defineProperty 劫持属性 getter/setter，无法检测新增/删除属性、数组索引和 length 修改，需要 Vue.set/delete。Vue 3 使用 Proxy 代理整个对象，可以拦截属性增删、数组操作，且惰性响应（仅在访问时才递归代理），性能更好，支持 Map/Set 等类型。" },
+  { id:"q8", title:"Webpack 打包优化实践", difficulty:"中等", topicId:"t3b", topic:"工程化",
+    body:"请列举至少 5 种 Webpack 打包优化手段，并说明各自的适用场景。",
+    reference:"(1) 代码分割（SplitChunks）提取公共依赖和按需加载；(2) Tree Shaking 通过 ES Module 静态分析移除死代码；(3) 压缩（TerserPlugin/CssMinimizer）；(4) 缓存（contenthash + 持久化缓存）；(5) 外部化（externals）将大型库通过 CDN 引入；(6) 多进程构建（thread-loader）；(7) DllPlugin 预编译不常变动依赖。" },
+];
+
+const topicTreeData = [
+  { id:"t1", name:"JavaScript", children:[
+    { id:"t1a", name:"闭包与作用域", count:1 }, { id:"t1b", name:"Hooks", count:1 }
+  ]},
+  { id:"t2", name:"CSS", children:[
+    { id:"t2a", name:"CSS布局", count:1 }, { id:"t2b", name:"Vue", count:1 }
+  ]},
+  { id:"t3", name:"网络与工程化", children:[
+    { id:"t3a", name:"网络", count:1 }, { id:"t3b", name:"工程化", count:1 }
+  ]},
+  { id:"t4", name:"TypeScript", children:[
+    { id:"t4a", name:"TypeScript", count:1 }
+  ]},
+  { id:"t5", name:"浏览器", children:[
+    { id:"t5a", name:"异步编程", count:1 }
+  ]},
+];
+
+/* ── 预置试卷（mock 试卷列表） ── */
+let savedPapers = [
+  { id:"p1", title:"前端核心知识综合卷", questionIds:["q1","q3","q4","q6","q8"], timeLimit:30, createdAt:"2026-06-15", attemptCount:2, bestScore:82 },
+  { id:"p2", title:"高级框架与工具链", questionIds:["q2","q5","q7"], timeLimit:20, createdAt:"2026-06-14", attemptCount:1, bestScore:65 },
+];
+let nextPaperId = 3;
+
+/* ── 全局状态 ── */
+let selectedIds = new Set();          // 创建试卷时的选中
+let filter = { topicId:null, difficulty:"", search:"" };
+let currentView = "list";
+let currentPaper = null;               // 当前正在操作的试卷
+
+// 作答状态
+let takeIdx = 0, takeTimerId = null, takeTimeLeft = 0, takeAnswers = {};
+
+/* ════════════════════════════════════════
+   试卷列表
+   ════════════════════════════════════════ */
+function renderPaperList() {
+  const grid = document.getElementById("paper-grid");
+  if (savedPapers.length === 0) {
+    grid.innerHTML = `<div class="empty-state">
+      <p style="font-size:15px;margin-bottom:8px;">还没有试卷</p>
+      <p style="font-size:13px;margin-bottom:16px;">从你的题库中选题，创建一份试卷开始模拟考试</p>
+      <button class="btn btn-primary" onclick="switchTab('create')">+ 创建第一份试卷</button>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = savedPapers.map(p => {
+    const qs = p.questionIds.map(id => allQuestions.find(q => q.id === id)).filter(Boolean);
+    return `<div class="paper-card">
+      <div class="pc-title">${p.title}</div>
+      <div class="pc-meta">
+        <span>${qs.length} 题</span>
+        <span>限时 ${p.timeLimit} 分钟</span>
+        <span>${p.createdAt}</span>
+      </div>
+      ${p.attemptCount > 0 ? `<div class="pc-meta" style="margin-bottom:10px;">
+        <span class="pc-stat">已作答 <em>${p.attemptCount}</em> 次</span>
+        <span class="pc-stat">最高分 <em>${p.bestScore}</em></span>
+      </div>` : '<div class="pc-meta" style="margin-bottom:10px;"><span class="pc-stat">尚未作答</span></div>'}
+      <div class="pc-actions">
+        <button class="btn btn-primary btn-sm" onclick="startTake('${p.id}')">开始作答</button>
+        <button class="btn btn-outline btn-sm" onclick="editPaper('${p.id}')">编辑</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePaper('${p.id}')">删除</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function startTake(paperId) {
+  currentPaper = savedPapers.find(p => p.id === paperId);
+  if (!currentPaper) return;
+  doStartTake();
+}
+
+function doStartTake() {
+  if (!currentPaper) return;
+  const qs = getPaperQuestions(currentPaper);
+  if (qs.length === 0) { toast("该试卷没有题目"); return; }
+  takeIdx = 0;
+  takeAnswers = {};
+  takeTimeLeft = currentPaper.timeLimit * 60;
+  clearInterval(takeTimerId);
+  setBreadcrumb("我的试卷", "list", currentPaper.title + " · 作答");
+  document.getElementById("take-paper-title").textContent = currentPaper.title;
+  renderTake();
+  startTimer();
+  switchView("take");
+}
+
+function editPaper(paperId) {
+  currentPaper = savedPapers.find(p => p.id === paperId);
+  if (!currentPaper) return;
+  document.getElementById("create-title").value = currentPaper.title;
+  document.getElementById("create-timelimit").value = currentPaper.timeLimit;
+  selectedIds = new Set(currentPaper.questionIds);
+  document.getElementById("btn-save").textContent = "更新试卷";
+  switchTab("create");
+}
+
+function deletePaper(paperId) {
+  if (!confirm("确定删除这份试卷？已作答记录不受影响。")) return;
+  savedPapers = savedPapers.filter(p => p.id !== paperId);
+  if (currentPaper && currentPaper.id === paperId) currentPaper = null;
+  renderPaperList();
+  toast("试卷已删除");
+}
+
+function getPaperQuestions(paper) {
+  return paper.questionIds.map(id => allQuestions.find(q => q.id === id)).filter(Boolean);
+}
+
+/* ════════════════════════════════════════
+   创建试卷
+   ════════════════════════════════════════ */
+function renderTopicTree() {
+  const el = document.getElementById("topic-tree");
+  const build = (nodes, depth) => nodes.map(n => {
+    const active = filter.topicId === n.id;
+    if (n.children) {
+      return `<div>
+        <div class="topic-item${active?' active':''}" data-topic="${n.id}">
+          <span class="arrow">▾</span><span class="name">${n.name}</span>
+        </div>
+        <div class="topic-children">${build(n.children, depth+1)}</div>
+      </div>`;
+    }
+    return `<div class="topic-item${active?' active':''}" data-topic="${n.id}">
+      <span style="width:16px;flex-shrink:0"></span>
+      <span class="name">${n.name}</span><span class="cnt">${n.count}</span>
+    </div>`;
+  }).join("");
+  el.innerHTML = `
+    <div class="topic-item${!filter.topicId?' active':''}" data-topic="">
+      <span style="width:16px;flex-shrink:0"></span>
+      <span class="name">全部话题</span><span class="cnt">${allQuestions.length}</span>
+    </div>
+    ${build(topicTreeData, 0)}
+  `;
+  el.querySelectorAll(".topic-item").forEach(item => {
+    item.addEventListener("click", () => {
+      filter.topicId = item.dataset.topic || null;
+      renderTopicTree(); renderQList();
+    });
+  });
+}
+
+function filterQs() {
+  return allQuestions.filter(q => {
+    if (filter.topicId && q.topicId !== filter.topicId) return false;
+    if (filter.difficulty && q.difficulty !== filter.difficulty) return false;
+    if (filter.search) {
+      const s = filter.search.toLowerCase();
+      if (!q.title.toLowerCase().includes(s) && !q.topic.toLowerCase().includes(s)) return false;
+    }
+    return true;
+  });
+}
+
+function renderQList() {
+  const list = document.getElementById("q-list");
+  const filtered = filterQs();
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:60px 20px;">没有匹配的题目</div>';
+    document.getElementById("sel-count").textContent = selectedIds.size;
+    return;
+  }
+  list.innerHTML = filtered.map(q => {
+    const sel = selectedIds.has(q.id);
+    const d = q.difficulty;
+    const dc = d==="简单"?"badge-easy":d==="困难"?"badge-hard":"badge-medium";
+    return `<div class="q-item${sel?' selected':''}" data-qid="${q.id}">
+      <div class="q-check"></div>
+      <div class="q-info">
+        <div class="q-title">${q.title}</div>
+        <div class="q-meta"><span class="badge ${dc}">${d}</span><span>${q.topic}</span></div>
+      </div>
+    </div>`;
+  }).join("");
+  list.querySelectorAll(".q-item").forEach(el => {
+    el.addEventListener("click", () => {
+      const qid = el.dataset.qid;
+      if (selectedIds.has(qid)) selectedIds.delete(qid);
+      else selectedIds.add(qid);
+      renderQList();
+    });
+  });
+  document.getElementById("sel-count").textContent = selectedIds.size;
+}
+
+document.getElementById("diff-chips").addEventListener("click", e => {
+  if (e.target.tagName !== "BUTTON") return;
+  document.querySelectorAll("#diff-chips .chip").forEach(c => c.classList.remove("active"));
+  e.target.classList.add("active");
+  filter.difficulty = e.target.dataset.diff;
+  renderQList();
+});
+document.getElementById("search-input").addEventListener("input", e => {
+  filter.search = e.target.value.trim(); renderQList();
+});
+
+document.getElementById("btn-save").addEventListener("click", () => {
+  const title = document.getElementById("create-title").value.trim();
+  const timeLimit = parseInt(document.getElementById("create-timelimit").value) || 30;
+  if (!title) { toast("请输入试卷标题"); return; }
+  if (selectedIds.size === 0) { toast("请至少选择一道题目"); return; }
+
+  if (currentPaper) {
+    // 编辑模式
+    currentPaper.title = title;
+    currentPaper.timeLimit = timeLimit;
+    currentPaper.questionIds = Array.from(selectedIds);
+    toast("试卷已更新");
+  } else {
+    // 新建模式
+    savedPapers.unshift({
+      id: "p" + (nextPaperId++),
+      title,
+      questionIds: Array.from(selectedIds),
+      timeLimit,
+      createdAt: "2026-06-" + String(new Date().getDate()).padStart(2,"0"),
+      attemptCount: 0,
+      bestScore: 0
+    });
+    toast("试卷已保存");
+  }
+  currentPaper = null;
+  selectedIds.clear();
+  document.getElementById("create-title").value = "";
+  document.getElementById("create-timelimit").value = "30";
+  document.getElementById("btn-save").textContent = "保存试卷";
+  renderQList();
+  renderPaperList();
+  switchTab("list");
+});
+
+document.getElementById("btn-clear").addEventListener("click", () => {
+  selectedIds.clear(); renderQList();
+});
+
+/* ════════════════════════════════════════
+   作答
+   ════════════════════════════════════════ */
+function renderTake() {
+  const qs = getPaperQuestions(currentPaper);
+  if (!qs.length) return;
+  const q = qs[takeIdx];
+  document.getElementById("take-idx").textContent = `第 ${takeIdx+1}/${qs.length} 题`;
+  document.getElementById("progress-fill").style.width = `${((takeIdx+1)/qs.length)*100}%`;
+  document.getElementById("take-q-num").textContent = `题目 ${takeIdx+1}`;
+  document.getElementById("take-q-title").textContent = q.title;
+  document.getElementById("take-q-body").textContent = q.body;
+  const d = q.difficulty;
+  document.getElementById("take-diff-badge").innerHTML = `<span class="badge ${d==='简单'?'badge-easy':d==='困难'?'badge-hard':'badge-medium'}">${d}</span>`;
+  document.getElementById("take-answer").value = takeAnswers[q.id] || "";
+  document.getElementById("btn-prev").disabled = takeIdx === 0;
+
+  const isLast = takeIdx === qs.length - 1;
+  const next = document.getElementById("btn-next");
+  next.textContent = isLast ? "提交试卷 ✓" : "下一题 →";
+  if (isLast) next.style.background = "#059669"; else next.style.background = "";
+
+  document.getElementById("take-dots").innerHTML = qs.map((qq, i) => {
+    let cls = i === takeIdx ? "current" : takeAnswers[qq.id] ? "done" : "";
+    return `<span class="take-dot ${cls}" data-idx="${i}"></span>`;
+  }).join("");
+  document.querySelectorAll(".take-dot").forEach(d => {
+    d.addEventListener("click", () => { saveAnswer(); takeIdx = parseInt(d.dataset.idx); renderTake(); });
+  });
+  document.getElementById("take-answer").focus();
+}
+
+function saveAnswer() {
+  const qs = getPaperQuestions(currentPaper);
+  if (!qs.length) return;
+  takeAnswers[qs[takeIdx].id] = document.getElementById("take-answer").value;
+}
+
+function startTimer() {
+  clearInterval(takeTimerId);
+  takeTimerId = setInterval(() => {
+    takeTimeLeft--;
+    if (takeTimeLeft <= 0) { clearInterval(takeTimerId); submitExam(); return; }
+    const m = Math.floor(takeTimeLeft/60), s = takeTimeLeft%60;
+    const el = document.getElementById("take-timer");
+    el.textContent = `${m}:${String(s).padStart(2,"0")}`;
+    el.classList.toggle("warning", takeTimeLeft < 300 && takeTimeLeft >= 60);
+    el.classList.toggle("danger", takeTimeLeft < 60);
+  }, 1000);
+}
+
+function submitExam() {
+  clearInterval(takeTimerId);
+  saveAnswer();
+  initResult();
+  setBreadcrumb("我的试卷", "list", currentPaper.title + " · 作答结果");
+  switchView("result");
+  toast("试卷已提交，AI 评分完成！");
+
+  // 更新试卷统计
+  const qs = getPaperQuestions(currentPaper);
+  const vals = Object.values(takeAnswers).map(a => (a||"").trim().length);
+  const total = vals.length ? Math.round(vals.reduce((a,b)=>a+Math.min(b>80?95:b>30?75:b>0?40:0,100),0)/vals.length) : 0;
+  currentPaper.attemptCount++;
+  if (total > currentPaper.bestScore) currentPaper.bestScore = total;
+}
+
+document.getElementById("btn-prev").addEventListener("click", () => { saveAnswer(); if (takeIdx > 0) { takeIdx--; renderTake(); } });
+document.getElementById("btn-next").addEventListener("click", () => {
+  saveAnswer();
+  const qs = getPaperQuestions(currentPaper);
+  if (takeIdx < qs.length - 1) { takeIdx++; renderTake(); }
+  else {
+    if (!Object.values(takeAnswers).some(a => a.trim())) { toast("请至少回答一道题再提交"); return; }
+    submitExam();
+  }
+});
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey||e.metaKey) && e.key==="s" && currentView==="take") { e.preventDefault(); saveAnswer(); toast("答案已暂存"); }
+});
+
+/* ════════════════════════════════════════
+   结果
+   ════════════════════════════════════════ */
+function initResult() {
+  const qs = getPaperQuestions(currentPaper);
+  const mockScores = {}, mockFb = {};
+  for (const q of qs) {
+    const len = (takeAnswers[q.id] || "").trim().length;
+    if (len > 80) mockScores[q.id] = 80 + Math.floor(Math.random()*20);
+    else if (len > 30) mockScores[q.id] = 55 + Math.floor(Math.random()*25);
+    else if (len > 0) mockScores[q.id] = 25 + Math.floor(Math.random()*30);
+    else mockScores[q.id] = 0;
+    mockFb[q.id] = len > 80 ? "回答较为完整，核心概念表述准确。建议补充实际项目中的具体案例来增强说服力。"
+      : len > 30 ? "基本答到了关键点，但缺乏深度和细节展开。建议围绕核心概念扩展说明并给出代码示例。"
+      : len > 0 ? "回答过于简略，仅触及了问题的表面。请尝试从原理、应用场景、注意事项等多个维度展开。"
+      : "未作答。建议即使不确定也要尝试写出自己的理解，AI 会根据你的回答给出针对性建议。";
+  }
+  const vals = Object.values(mockScores);
+  const total = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+  const elScore = document.getElementById("result-score");
+  elScore.textContent = total;
+  elScore.className = "result-score " + (total>=80?"good":total>=60?"ok":"bad");
+  document.getElementById("result-pass").textContent = `${vals.filter(s=>s>=60).length}/${qs.length}`;
+  const used = (currentPaper.timeLimit*60) - takeTimeLeft;
+  document.getElementById("result-time").textContent = `${Math.floor(used/60)}分${used%60}秒`;
+
+  document.getElementById("result-details").innerHTML = qs.map((q,i) => {
+    const s = mockScores[q.id], cls = s>=80?"high":s>=60?"mid":"low";
+    const ans = (takeAnswers[q.id] || "").replace(/\n/g,"<br>");
+    return `<div class="q-result${i===0?' open':''}">
+      <div class="q-result-header">
+        <span class="q-res-title">${i+1}. ${q.title}</span>
+        <span class="score-pill ${cls}">${s} 分</span>
+      </div>
+      <div class="q-result-body">
+        <div class="q-result-section"><h4>你的回答</h4><div class="content answer">${ans || '<span style="color:#9ca3af">未作答</span>'}</div></div>
+        <div class="q-result-section"><h4>参考答案</h4><div class="content">${q.reference}</div></div>
+        <div class="feedback-block"><strong>🤖 AI 点评：</strong>${mockFb[q.id]}</div>
+      </div>
+    </div>`;
+  }).join("");
+  document.querySelectorAll(".q-result-header").forEach(h => {
+    h.addEventListener("click", () => h.parentElement.classList.toggle("open"));
+  });
+}
+
+/* ════════════════════════════════════════
+   View / Tab 切换
+   ════════════════════════════════════════ */
+function switchTab(tab) {
+  currentView = tab;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById(`view-${tab}`).classList.add("active");
+
+  // 隐藏 breadcrumb 和 tab bar（仅在 list/create 显示 tab）
+  document.getElementById("tab-bar").style.display = "";
+  document.getElementById("breadcrumb").style.display = "none";
+  currentPaper = null;
+
+  if (tab === "create") {
+    // 重置创建模式
+    if (!currentPaper) {
+      document.getElementById("create-title").value = "";
+      document.getElementById("create-timelimit").value = "30";
+      selectedIds.clear();
+      document.getElementById("btn-save").textContent = "保存试卷";
+      renderQList();
+    }
+    renderTopicTree();
+    renderQList();
+  }
+  if (tab === "list") {
+    renderPaperList();
+  }
+}
+
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById(`view-${view}`).classList.add("active");
+
+  // 只在主视图（list/create）显示 tab bar
+  const isMain = view === "list" || view === "create";
+  document.getElementById("tab-bar").style.display = isMain ? "" : "none";
+  document.getElementById("breadcrumb").style.display = isMain ? "none" : "";
+}
+
+function setBreadcrumb(backLabel, backView, currentLabel) {
+  document.getElementById("breadcrumb").innerHTML = `<a onclick="goBack('${backView}')">← ${backLabel}</a> <span>›</span> ${currentLabel}`;
+}
+
+function goBack(view) {
+  clearInterval(takeTimerId);
+  if (view === "list") {
+    currentPaper = null;
+    renderPaperList();
+  }
+  if (view === "list" || view === "create") {
+    switchTab(view);
+  } else {
+    switchView(view);
+  }
+}
+
+document.querySelectorAll(".tab-btn").forEach(b => {
+  b.addEventListener("click", () => switchTab(b.dataset.tab));
+});
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* ── 启动 ── */
+renderPaperList();
+renderTopicTree();
+renderQList();
+</script>
+</body>
+</html>

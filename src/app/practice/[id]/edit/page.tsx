@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildTopicTree, flattenForSelect } from "@/lib/topics";
 import { QuestionForm } from "@/components/QuestionForm";
+import { Card, ErrorBanner, Icon } from "@/components/ui";
 
 export default async function EditQuestionPage({
   params,
@@ -19,19 +20,19 @@ export default async function EditQuestionPage({
   });
   if (!question) notFound();
 
-  // 只有作者本人能编辑内容
   if (question.ownerId !== user.id) {
     return (
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl animate-fade-in">
         <Link
           href={`/practice/${id}`}
-          className="mb-4 inline-flex items-center text-sm text-gray-500 hover:text-brand-600"
+          className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-brand-600"
         >
-          ← 返回题目
+          <Icon name="arrow-left" size={16} />
+          返回题目
         </Link>
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-sm text-red-700">这道题不是你创建的，无法编辑。</p>
-        </div>
+        <Card padded>
+          <ErrorBanner>这道题不是你创建的，无法编辑。</ErrorBanner>
+        </Card>
       </div>
     );
   }
@@ -43,27 +44,31 @@ export default async function EditQuestionPage({
   const topicOptions = flattenForSelect(buildTopicTree(flatTopics));
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl animate-fade-in">
       <Link
         href={`/practice/${id}`}
-        className="mb-4 inline-flex items-center text-sm text-gray-500 hover:text-brand-600"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-brand-600"
       >
-        ← 返回题目
+        <Icon name="arrow-left" size={16} />
+        返回题目
       </Link>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">编辑题目</h1>
-      <QuestionForm
-        questionId={question.id}
-        topicOptions={topicOptions}
-        direction={user.direction || "其他"}
-        initial={{
-          difficulty: question.difficulty,
-          title: question.title,
-          body: question.body,
-          referenceAnswer: question.referenceAnswer,
-          tags: question.tags,
-          topicId: question.topicId,
-        }}
-      />
+      <h1 className="mb-6 text-2xl font-bold text-ink">编辑题目</h1>
+      <Card padded>
+        <QuestionForm
+          questionId={question.id}
+          topicOptions={topicOptions}
+          direction={user.direction || "其他"}
+          initial={{
+            difficulty: question.difficulty,
+            title: question.title,
+            body: question.body,
+            referenceAnswer: question.referenceAnswer,
+            detailedAnswer: question.detailedAnswer,
+            tags: question.tags,
+            topicId: question.topicId,
+          }}
+        />
+      </Card>
     </div>
   );
 }

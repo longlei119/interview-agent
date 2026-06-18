@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --background: #f7f8fa;
-  --foreground: #1a1a1a;
+  --background: #f5f7fb;
+  --foreground: #0f172a;
+  --brand: #3b6cff;
 }
 
 html,
@@ -15,17 +16,228 @@ body {
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background:
+    linear-gradient(180deg, #fafbff 0%, #f5f7fb 240px) no-repeat,
+    var(--background);
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
-  font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC",
+  -moz-osx-font-smoothing: grayscale;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", "PingFang SC",
     "Microsoft YaHei", sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* 让聊天区域的滚动更顺滑 */
+/* 统一键盘聚焦轮廓 */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+button:focus-visible,
+a:focus-visible {
+  outline-offset: 2px;
+}
+
+/* 选区配色 */
+::selection {
+  background: #dbe7ff;
+  color: #1e3791;
+}
+
+/* 滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.5);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 聊天区域滚动顺滑 */
 .scroll-smooth {
   scroll-behavior: smooth;
+}
+
+/* 让 tiptap 编辑区有最小高度 */
+.ProseMirror {
+  min-height: 120px;
+  outline: none;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #94a3b8;
+  pointer-events: none;
+  height: 0;
+}
+
+/* 富文本答案阅读排版：段落、标题、列表、代码、引用、表格、链接 */
+.rich-content {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #1e293b;
+  word-break: break-word;
+}
+.rich-content > *:first-child {
+  margin-top: 0;
+}
+.rich-content > *:last-child {
+  margin-bottom: 0;
+}
+.rich-content p {
+  margin: 0 0 0.75em 0;
+}
+.rich-content h1,
+.rich-content h2,
+.rich-content h3,
+.rich-content h4 {
+  font-weight: 600;
+  line-height: 1.4;
+  color: #0f172a;
+  margin: 1.4em 0 0.6em;
+}
+.rich-content h1 {
+  font-size: 1.35em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #e2e8f0;
+}
+.rich-content h2 {
+  font-size: 1.2em;
+}
+.rich-content h3 {
+  font-size: 1.08em;
+}
+.rich-content h4 {
+  font-size: 1em;
+  color: #475569;
+}
+.rich-content ul,
+.rich-content ol {
+  margin: 0.5em 0 0.9em;
+  padding-left: 1.6em;
+}
+.rich-content ul {
+  list-style: disc;
+}
+.rich-content ol {
+  list-style: decimal;
+}
+.rich-content li {
+  margin: 0.25em 0;
+}
+.rich-content li::marker {
+  color: #94a3b8;
+}
+.rich-content li > p {
+  margin: 0 0 0.25em;
+}
+.rich-content a {
+  color: #3b6cff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(59, 108, 255, 0.3);
+  transition: color 150ms, border-color 150ms;
+}
+.rich-content a:hover {
+  color: #1e3791;
+  border-bottom-color: #1e3791;
+}
+.rich-content strong {
+  font-weight: 600;
+  color: #0f172a;
+}
+.rich-content em {
+  font-style: italic;
+}
+.rich-content code {
+  font-family: "JetBrains Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.88em;
+  background: #f1f5f9;
+  color: #be185d;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+.rich-content pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 14px 18px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.8em 0 1em;
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: "JetBrains Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
+}
+.rich-content pre code {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+  border-radius: 0;
+}
+.rich-content blockquote {
+  margin: 0.9em 0;
+  padding: 0.4em 0 0.4em 14px;
+  border-left: 3px solid #3b6cff;
+  background: #f5f7fb;
+  border-radius: 0 6px 6px 0;
+  color: #475569;
+}
+.rich-content blockquote p {
+  margin: 0;
+}
+.rich-content mark {
+  background: #fef3c7;
+  color: #78350f;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.rich-content hr {
+  margin: 1.5em 0;
+  border: none;
+  border-top: 1px solid #e2e8f0;
+}
+.rich-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 0.6em 0;
+}
+.rich-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.9em 0;
+  font-size: 13px;
+  overflow-x: auto;
+  display: block;
+}
+.rich-content thead {
+  background: #f1f5f9;
+}
+.rich-content th,
+.rich-content td {
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.rich-content th {
+  font-weight: 600;
+  color: #0f172a;
 }

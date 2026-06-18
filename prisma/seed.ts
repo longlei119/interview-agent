@@ -162,6 +162,7 @@ async function main() {
         title: q.title,
         body: q.body,
         referenceAnswer: q.referenceAnswer,
+        detailedAnswer: "",
         tags: q.tags,
         visibility: "public",
         manualHeat: q.manualHeat,

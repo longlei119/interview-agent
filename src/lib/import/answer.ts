@@ -17,7 +17,7 @@ export async function generateAnswer(q: ExtractedQuestion): Promise<string> {
   let lastErr: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const reply = await chat(generateAnswerMessages(q), {
+      const reply = await chat(await generateAnswerMessages(q), {
         role: "answer",
         temperature: 0.4,
       });

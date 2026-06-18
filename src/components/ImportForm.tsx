@@ -2,9 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import {
+  Badge,
+  Button,
+  ErrorBanner,
+  HintBanner,
+  Icon,
+  Textarea,
+} from "@/components/ui";
 
 const MAX_IMAGES = 6;
-const MAX_SIZE = 5 * 1024 * 1024; // 单张 5MB
+const MAX_SIZE = 5 * 1024 * 1024;
 
 interface ImportResult {
   ok: boolean;
@@ -90,46 +98,51 @@ export function ImportForm({ visionConfigured }: { visionConfigured: boolean }) 
   }
 
   const tabClass = (active: boolean) =>
-    `px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+    `inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
       active
-        ? "border-brand-500 text-brand-600"
-        : "border-transparent text-gray-500 hover:text-gray-700"
+        ? "bg-brand-50 text-brand-700"
+        : "text-muted hover:bg-canvas hover:text-ink"
     }`;
 
   return (
     <div>
-      {/* tab 切换 */}
-      <div className="mb-4 flex gap-2 border-b border-gray-200">
-        <button className={tabClass(tab === "text")} onClick={() => setTab("text")}>
+      <div className="mb-4 inline-flex items-center gap-1 rounded-lg border border-line bg-canvas p-1">
+        <button className={`rounded-md ${tabClass(tab === "text")}`} onClick={() => setTab("text")}>
+          <Icon name="file" size={14} />
           粘贴文本
         </button>
-        <button className={tabClass(tab === "image")} onClick={() => setTab("image")}>
+        <button className={`rounded-md ${tabClass(tab === "image")}`} onClick={() => setTab("image")}>
+          <Icon name="image" size={14} />
           上传图片
         </button>
       </div>
 
       {tab === "text" ? (
-        <textarea
+        <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={10}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm leading-relaxed outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
           placeholder={"把面试题粘进来，一道或多道都行。\n有答案的会保留，没答案的 AI 会自动补。"}
         />
       ) : (
         <div>
           {!visionConfigured && (
-            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-              视觉识别模型尚未配置，图片导入暂不可用。可以先用「粘贴文本」导入。
+            <div className="mb-3">
+              <HintBanner variant="warn">
+                视觉识别模型尚未配置，图片导入暂不可用。可以先用「粘贴文本」导入。
+              </HintBanner>
             </div>
           )}
           <label
-            className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-500 transition-colors hover:border-brand-300 ${
+            className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-line bg-canvas px-4 py-10 text-center text-sm text-muted transition-colors hover:border-brand-300 hover:bg-brand-25/40 ${
               !visionConfigured ? "pointer-events-none opacity-50" : ""
             }`}
           >
-            <span className="text-2xl">🖼️</span>
-            <span className="mt-2">点击选择图片（最多 {MAX_IMAGES} 张，单张 ≤5MB）</span>
+            <div className="flex size-10 items-center justify-center rounded-full bg-surface text-brand-500 shadow-soft">
+              <Icon name="image" size={20} />
+            </div>
+            <span className="mt-3 font-medium text-ink">点击选择图片</span>
+            <span className="mt-1 text-xs">最多 {MAX_IMAGES} 张，单张 ≤5MB</span>
             <input
               type="file"
               accept="image/*"
@@ -147,14 +160,14 @@ export function ImportForm({ visionConfigured }: { visionConfigured: boolean }) 
                   <img
                     src={img.url}
                     alt={img.name}
-                    className="h-20 w-full rounded-lg border border-gray-200 object-cover"
+                    className="h-20 w-full rounded-lg border border-line object-cover"
                   />
                   <button
                     onClick={() => removeImage(i)}
-                    className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/80"
                     title="移除"
                   >
-                    ✕
+                    <Icon name="x" size={12} />
                   </button>
                 </div>
               ))}
@@ -163,17 +176,19 @@ export function ImportForm({ visionConfigured }: { visionConfigured: boolean }) 
         </div>
       )}
 
-      {error && (
-        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
-      )}
+      {error && <div className="mt-3"><ErrorBanner>{error}</ErrorBanner></div>}
 
-      <button
-        onClick={submit}
-        disabled={loading || (tab === "image" && !visionConfigured)}
-        className="mt-4 rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
-      >
-        {loading ? "识别中…（AI 处理需要一点时间）" : "开始导入"}
-      </button>
+      <div className="mt-4">
+        <Button
+          onClick={submit}
+          loading={loading}
+          disabled={tab === "image" && !visionConfigured}
+          leftIcon={!loading ? <Icon name="sparkles" size={16} /> : undefined}
+          size="lg"
+        >
+          {loading ? "识别中…（AI 处理需要一点时间）" : "开始导入"}
+        </Button>
+      </div>
 
       {result && <ResultPanel result={result} />}
     </div>
@@ -183,47 +198,50 @@ export function ImportForm({ visionConfigured }: { visionConfigured: boolean }) 
 function ResultPanel({ result }: { result: ImportResult }) {
   if (result.created === 0 && result.failed === 0) {
     return (
-      <div className="mt-5 rounded-xl border border-gray-200 bg-white p-5 text-center text-sm text-gray-500">
+      <div className="mt-5 rounded-xl border border-dashed border-line bg-canvas p-6 text-center text-sm text-muted">
         {result.message || "未识别到任何面试题，换段更清晰的文本试试。"}
       </div>
     );
   }
 
   return (
-    <div className="mt-5 space-y-3 rounded-xl border border-gray-200 bg-white p-5">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <span className="font-semibold text-gray-900">
+    <div className="mt-5 animate-fade-in space-y-3 rounded-xl border border-line bg-surface p-5 shadow-card">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+        <span className="inline-flex items-center gap-1 font-semibold text-ink">
+          <Icon name="check" size={14} className="text-emerald-600" />
           成功导入 {result.created} 道
         </span>
         {result.answersGenerated > 0 && (
-          <span className="text-violet-600">🤖 自动补答案 {result.answersGenerated} 道</span>
+          <Badge variant="violet">
+            <Icon name="bot" size={12} />
+            自动补答案 {result.answersGenerated} 道
+          </Badge>
         )}
         {result.newTopics.length > 0 && (
-          <span className="text-gray-500">
+          <span className="text-muted">
             新建分类：{result.newTopics.map((t) => t.name).join("、")}
           </span>
         )}
-        {result.failed > 0 && (
-          <span className="text-red-500">失败 {result.failed} 道</span>
-        )}
+        {result.failed > 0 && <span className="text-red-600">失败 {result.failed} 道</span>}
       </div>
 
-      <ul className="space-y-1 text-sm text-gray-600">
+      <ul className="space-y-1.5 text-sm text-ink">
         {result.items.map((it) => (
           <li key={it.id} className="flex items-center gap-2">
             <span className="truncate">{it.title.slice(0, 40)}</span>
-            <span className="shrink-0 text-xs text-gray-400">→ {it.topicLabel}</span>
+            <span className="shrink-0 text-xs text-muted">→ {it.topicLabel}</span>
             {it.answerGeneratedByAi && (
-              <span className="shrink-0 rounded bg-violet-100 px-1.5 text-xs text-violet-700">
-                🤖 AI 答案
-              </span>
+              <Badge variant="violet" className="shrink-0">
+                <Icon name="bot" size={10} />
+                AI 答案
+              </Badge>
             )}
           </li>
         ))}
       </ul>
 
       {result.errors.length > 0 && (
-        <ul className="space-y-1 border-t border-gray-100 pt-2 text-xs text-red-500">
+        <ul className="space-y-1 border-t border-line pt-2 text-xs text-red-600">
           {result.errors.map((e, i) => (
             <li key={i}>
               {e.title}：{e.message}
@@ -234,9 +252,10 @@ function ResultPanel({ result }: { result: ImportResult }) {
 
       <Link
         href="/practice"
-        className="inline-block text-sm font-medium text-brand-600 hover:underline"
+        className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"
       >
-        去我的题库查看 →
+        去我的题库查看
+        <Icon name="arrow-right" size={14} />
       </Link>
     </div>
   );

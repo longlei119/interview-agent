@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { Button, ErrorBanner, Field, Icon, Input } from "@/components/ui";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
@@ -41,68 +42,61 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   }
 
   return (
-    <div className="mx-auto mt-8 w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:mt-16 sm:p-8">
-      <h1 className="mb-1 text-2xl font-bold text-gray-900">
-        {isRegister ? "创建账号" : "欢迎回来"}
-      </h1>
-      <p className="mb-6 text-sm text-gray-500">
-        {isRegister ? "注册后即可开始刷题和模拟面试" : "登录继续你的面试准备"}
-      </p>
+    <div className="mx-auto mt-6 w-full max-w-sm animate-fade-in rounded-2xl border border-line bg-surface p-6 shadow-card sm:mt-12 sm:p-8">
+      <div className="mb-6 flex flex-col items-center text-center">
+        <div className="flex size-11 items-center justify-center rounded-xl bg-brand-500 text-white shadow-soft">
+          <Icon name="target" size={22} />
+        </div>
+        <h1 className="mt-4 text-2xl font-bold text-ink">
+          {isRegister ? "创建账号" : "欢迎回来"}
+        </h1>
+        <p className="mt-1 text-sm text-muted">
+          {isRegister ? "注册后即可开始刷题和模拟面试" : "登录继续你的面试准备"}
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {isRegister && (
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">昵称</label>
-            <input
+          <Field label="昵称">
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
               placeholder="怎么称呼你"
             />
-          </div>
+          </Field>
         )}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">邮箱</label>
-          <input
+        <Field label="邮箱">
+          <Input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             placeholder="you@example.com"
           />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">密码</label>
-          <input
+        </Field>
+        <Field label="密码">
+          <Input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
             autoComplete={isRegister ? "new-password" : "current-password"}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             placeholder="至少 6 位"
           />
-        </div>
+        </Field>
 
-        {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
-        )}
+        {error && <ErrorBanner>{error}</ErrorBanner>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-brand-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
-        >
-          {loading ? "处理中..." : isRegister ? "注册" : "登录"}
-        </button>
+        <Button type="submit" loading={loading} fullWidth size="lg">
+          {isRegister ? "注册" : "登录"}
+        </Button>
       </form>
 
-      <p className="mt-5 text-center text-sm text-gray-500">
+      <p className="mt-5 text-center text-sm text-muted">
         {isRegister ? "已有账号？" : "还没有账号？"}
         <Link
           href={isRegister ? "/login" : "/register"}

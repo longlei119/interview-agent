@@ -27,6 +27,11 @@ type SpeechRecognitionLike = {
   onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>>; resultIndex: number }) => void) | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onstart?: (() => void) | null;
+  onaudiostart?: (() => void) | null;
+  onspeechstart?: (() => void) | null;
+  onspeechend?: (() => void) | null;
+  onnomatch?: (() => void) | null;
 };
 
 function getNativeRecognition(): SpeechRecognitionLike | null {
@@ -55,6 +60,9 @@ export function VoiceInput({ onText, getCurrentText, className = "" }: Props) {
   const chunksRef = useRef<Blob[]>([]);
   const finalTextRef = useRef("");
   const prefixRef = useRef("");
+  // 连续 no-speech 计数 + 是否检测到过说话声，用于在收不到声音时给用户明确提示
+  const noSpeechCountRef = useRef(0);
+  const speechDetectedRef = useRef(false);
   const onTextRef = useRef(onText);
   onTextRef.current = onText;
 
@@ -135,6 +143,20 @@ export function VoiceInput({ onText, getCurrentText, className = "" }: Props) {
     rec.interimResults = true;
     finalTextRef.current = "";
     prefixRef.current = getCurrentText?.() ?? "";
+    noSpeechCountRef.current = 0;
+    speechDetectedRef.current = false;
+
+    // 诊断日志：确认识别的生命周期走到哪一步
+    rec.onstart = () => console.log("[STT] onstart 识别已启动");
+    rec.onaudiostart = () => console.log("[STT] onaudiostart 开始接收音频");
+    rec.onspeechstart = () => {
+      console.log("[STT] onspeechstart 检测到说话");
+      speechDetectedRef.current = true;
+      noSpeechCountRef.current = 0;
+      setError("");
+    };
+    rec.onspeechend = () => console.log("[STT] onspeechend 说话结束");
+    rec.onnomatch = () => console.log("[STT] onnomatch 未匹配到内容");
 
     rec.onresult = (e) => {
       let finalChunk = "";
@@ -146,6 +168,7 @@ export function VoiceInput({ onText, getCurrentText, className = "" }: Props) {
         if (real.isFinal) finalChunk += transcript;
         else interim += transcript;
       }
+      console.log("[STT] onresult final=", JSON.stringify(finalChunk), "interim=", JSON.stringify(interim));
       if (finalChunk) {
         finalTextRef.current += finalChunk;
       }
@@ -162,9 +185,17 @@ export function VoiceInput({ onText, getCurrentText, className = "" }: Props) {
     };
     rec.onerror = (e) => {
       const err = e.error || "";
+      console.log("[STT] onerror error=", err);
       // no-speech: 没检测到语音，属于正常间隙，自动重启继续听
       // aborted: 用户切了标签页或浏览器中断，也自动重启
       if (err === "no-speech" || err === "aborted") {
+        if (err === "no-speech") {
+          noSpeechCountRef.current += 1;
+          // 从未检测到说话声，且连续多次 no-speech：极可能是麦克风没选对/被静音/被占用
+          if (!speechDetectedRef.current && noSpeechCountRef.current >= 2) {
+            setError("没听到声音：请检查麦克风是否选对、是否静音，或被其它程序占用");
+          }
+        }
         if (recognitionRef.current === rec) {
           try {
             rec.start();
@@ -176,10 +207,19 @@ export function VoiceInput({ onText, getCurrentText, className = "" }: Props) {
         return;
       }
       // 其他错误（not-allowed / network / service-not-allowed）是致命的
-      setError(err || "识别失败");
+      setError(
+        err === "not-allowed"
+          ? "麦克风权限被拒绝，请在浏览器地址栏允许麦克风"
+          : err === "network"
+            ? "原生识别需要联网（Chrome 会把音频发到 Google 识别），当前网络不可达"
+            : err === "language-not-supported"
+              ? "当前浏览器不支持中文识别"
+              : err || "识别失败"
+      );
       setListening(false);
     };
     rec.onend = () => {
+      console.log("[STT] onend 识别结束");
       // 如果仍在 listening 态但 recognition 自己停了（Chrome 会在 ~60s 静默后停），
       // 自动重启；只有用户主动 stop 时 recognitionRef 才被清空
       if (recognitionRef.current === rec) {
@@ -195,10 +235,12 @@ export function VoiceInput({ onText, getCurrentText, className = "" }: Props) {
 
     recognitionRef.current = rec;
     try {
+      console.log("[STT] 调用 rec.start()，mode=native，浏览器=", navigator.userAgent);
       rec.start();
       setListening(true);
       setError("");
     } catch (e) {
+      console.log("[STT] rec.start() 抛异常", e);
       setError(e instanceof Error ? e.message : "无法启动麦克风");
     }
   }

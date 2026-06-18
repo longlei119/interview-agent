@@ -8,6 +8,7 @@ import { isVisionConfigured, VisionModelNotConfiguredError } from "@/lib/deepsee
 import { extractFromText, extractFromImages } from "@/lib/import/extract";
 import { classifyQuestion } from "@/lib/import/classify";
 import { generateAnswer } from "@/lib/import/answer";
+import { exportQuestionToFile } from "@/lib/export-question";
 import type { ExtractedQuestion } from "@/lib/import/types";
 
 const FALLBACK_ROOT_NAME = "模型生成";
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
   if (mode !== "text" && mode !== "image") {
     return NextResponse.json({ error: "无效的导入方式" }, { status: 400 });
   }
-  if (mode === "image" && !isVisionConfigured()) {
+  if (mode === "image" && !(await isVisionConfigured())) {
     return NextResponse.json(
       { error: "视觉模型未配置，暂时无法从图片识别题目，请改用粘贴文本" },
       { status: 422 }
@@ -185,6 +186,9 @@ export async function POST(req: NextRequest) {
           manualHeat,
         },
       });
+
+      // 异步导出到 exports/questions/方向/话题路径/标题.md
+      void exportQuestionToFile({ questionId: created.id });
 
       const label =
         topicOptions.find((t) => t.id === topicId)?.label ?? FALLBACK_ROOT_NAME;

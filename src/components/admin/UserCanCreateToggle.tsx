@@ -6,7 +6,6 @@ import { useState } from "react";
 interface Props {
   userId: string;
   canCreate: boolean;
-  // 自己这一行不给关，避免把自己锁死
   isSelf: boolean;
 }
 
@@ -34,17 +33,17 @@ export function UserCanCreateToggle({ userId, canCreate, isSelf }: Props) {
   }
 
   if (isSelf) {
-    return <span className="text-xs text-gray-400">（你自己）</span>;
+    return <span className="text-xs text-muted">（你自己）</span>;
   }
 
   return (
     <button
       onClick={toggle}
       disabled={busy}
-      className={`rounded-lg px-3 py-1 text-sm font-medium disabled:opacity-60 ${
+      className={`inline-flex h-8 items-center rounded-lg border px-3 text-sm font-medium transition-colors disabled:opacity-60 ${
         value
-          ? "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-          : "border border-gray-300 bg-white text-gray-500 hover:bg-gray-50"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+          : "border-line bg-surface text-muted hover:bg-canvas hover:text-ink"
       }`}
     >
       {value ? "可加题 · 点击关闭" : "已禁用 · 点击开启"}

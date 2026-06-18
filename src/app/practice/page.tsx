@@ -10,12 +10,9 @@ import {
 } from "@/lib/topics";
 import { TopicTree } from "@/components/TopicTree";
 import { DirectionSetter } from "@/components/DirectionSetter";
-
-const difficultyColor: Record<string, string> = {
-  简单: "bg-green-100 text-green-700",
-  中等: "bg-amber-100 text-amber-700",
-  困难: "bg-red-100 text-red-700",
-};
+import { ExportLibraryButton } from "@/components/ExportLibraryButton";
+import { DeleteQuestionButton } from "@/components/DeleteQuestionButton";
+import { Badge, Card, EmptyState, Icon } from "@/components/ui";
 
 export default async function PracticePage({
   searchParams,
@@ -27,14 +24,12 @@ export default async function PracticePage({
 
   const { topic, difficulty } = await searchParams;
 
-  // 取我的全部话题（扁平），构造树
   const flatTopics = await prisma.topic.findMany({
     where: { userId: user.id },
     select: { id: true, name: true, parentId: true, sortOrder: true },
   });
   const tree = buildTopicTree(flatTopics);
 
-  // 选中节点解析：none = 未分类；具体 id = 该节点含子孙
   const isUnclassified = topic === "none";
   const activeTopicId = isUnclassified ? "none" : topic && flatTopics.some((t) => t.id === topic) ? topic : null;
   const subtreeIds =
@@ -42,7 +37,6 @@ export default async function PracticePage({
       ? collectSubtreeIds(flatTopics, activeTopicId)
       : [];
 
-  // 题目筛选条件
   const where: Record<string, unknown> = {
     ownerId: user.id,
     deletedAt: null,
@@ -65,7 +59,6 @@ export default async function PracticePage({
     },
   });
 
-  // 各节点（含子孙）题目数 + 未分类数，用于树上显示计数
   const allMine = await prisma.question.findMany({
     where: { ownerId: user.id, deletedAt: null },
     select: { topicId: true },
@@ -76,14 +69,12 @@ export default async function PracticePage({
     if (q.topicId) directCount[q.topicId] = (directCount[q.topicId] ?? 0) + 1;
     else unclassifiedCount++;
   }
-  // 含子孙累加
   const countMap: Record<string, number> = {};
   for (const t of flatTopics) {
     const ids = collectSubtreeIds(flatTopics, t.id);
     countMap[t.id] = ids.reduce((s, id) => s + (directCount[id] ?? 0), 0);
   }
 
-  // 面包屑路径
   const path =
     activeTopicId && activeTopicId !== "none"
       ? findTopicPath(flatTopics, activeTopicId)
@@ -94,15 +85,14 @@ export default async function PracticePage({
       ? path[path.length - 1].name
       : "全部题目";
 
-  // 题目必须挂在具体话题节点下，只有选中具体话题（非「全部」「未分类」）时才能新建
   const canCreateHere = user.canCreate && !!activeTopicId && activeTopicId !== "none";
   const newHref = canCreateHere ? `/practice/new?topic=${activeTopicId}` : "";
 
   const chipClass = (active: boolean) =>
-    `rounded-full px-3 py-1 text-sm transition-colors ${
+    `rounded-full px-3 py-1 text-sm transition-colors duration-150 ${
       active
-        ? "bg-brand-500 text-white"
-        : "bg-white text-gray-600 border border-gray-200 hover:border-brand-300"
+        ? "bg-brand-500 text-white shadow-soft"
+        : "bg-surface text-muted border border-line hover:border-brand-300 hover:text-ink"
     }`;
 
   const buildDiffHref = (diff: string) => {
@@ -114,14 +104,19 @@ export default async function PracticePage({
   };
 
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">我的题库</h1>
-        <DirectionSetter direction={user.direction} />
+    <div className="animate-fade-in">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">我的题库</h1>
+          <p className="mt-1 text-sm text-muted">按话题分类整理你自己的练习题。</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportLibraryButton />
+          <DirectionSetter direction={user.direction} />
+        </div>
       </div>
 
       <div className="flex flex-col gap-5 md:flex-row">
-        {/* 左侧话题树 */}
         <TopicTree
           tree={tree}
           activeId={activeTopicId}
@@ -129,17 +124,15 @@ export default async function PracticePage({
           countMap={countMap}
         />
 
-        {/* 右侧内容 */}
         <div className="min-w-0 flex-1">
-          {/* 面包屑 + 标题 + 新建 */}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-1 text-sm text-muted">
               <Link href="/practice" className="hover:text-brand-600">
                 全部
               </Link>
               {path.map((n) => (
                 <span key={n.id} className="flex items-center gap-1">
-                  <span className="text-gray-300">›</span>
+                  <Icon name="chevron-right" size={12} className="text-line" />
                   <Link href={`/practice?topic=${n.id}`} className="hover:text-brand-600">
                     {n.name}
                   </Link>
@@ -147,25 +140,25 @@ export default async function PracticePage({
               ))}
               {isUnclassified && (
                 <span className="flex items-center gap-1">
-                  <span className="text-gray-300">›</span>
+                  <Icon name="chevron-right" size={12} className="text-line" />
                   <span>未分类</span>
                 </span>
               )}
-              <span className="ml-1 text-gray-400">（{questions.length} 题）</span>
+              <span className="ml-1 text-xs text-muted">（{questions.length} 题）</span>
             </div>
             {canCreateHere && (
               <Link
                 href={newHref}
-                className="shrink-0 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+                className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-brand-500 px-4 text-sm font-semibold text-white shadow-soft transition-all hover:bg-brand-600 active:scale-[0.98]"
               >
-                + 在「{activeName}」下新建
+                <Icon name="plus" size={16} />
+                在「{activeName}」下新建
               </Link>
             )}
           </div>
 
-          {/* 难度筛选 */}
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-gray-400">难度</span>
+            <span className="text-xs font-medium text-muted">难度</span>
             <Link href={buildDiffHref("")} className={chipClass(!difficulty)}>
               全部
             </Link>
@@ -177,80 +170,74 @@ export default async function PracticePage({
           </div>
 
           {questions.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center">
-              <p className="text-gray-400">
-                {difficulty ? "没有符合筛选条件的题目" : "这里还没有题目"}
-              </p>
-              {!difficulty && user.canCreate && (
-                canCreateHere ? (
+            <EmptyState
+              icon="book"
+              title={difficulty ? "没有符合筛选条件的题目" : "这里还没有题目"}
+              desc={
+                !difficulty && user.canCreate
+                  ? canCreateHere
+                    ? `在「${activeName}」分类下新建一道题开始练习`
+                    : isUnclassified
+                      ? "未分类里是拉取或删话题后留下的题，无法直接新建。"
+                      : tree.length === 0
+                        ? "先在左侧「加根话题」建一个分类，再到分类下加题。"
+                        : "在左侧选一个话题分类，即可在该分类下新建题目。"
+                  : undefined
+              }
+              action={
+                !difficulty && user.canCreate && canCreateHere ? (
                   <Link
                     href={newHref}
-                    className="mt-3 inline-block text-sm font-medium text-brand-600 hover:underline"
+                    className="inline-flex h-9 items-center gap-1 rounded-lg bg-brand-500 px-4 text-sm font-semibold text-white hover:bg-brand-600"
                   >
-                    在「{activeName}」下新建一道 →
+                    <Icon name="plus" size={16} />
+                    新建第一道题
                   </Link>
-                ) : isUnclassified ? (
-                  <p className="mt-2 text-xs text-gray-400">
-                    未分类里是拉取或删话题后留下的题，无法直接新建。
-                  </p>
-                ) : tree.length === 0 ? (
-                  <p className="mt-2 text-xs text-gray-400">
-                    先在左侧「+ 加根话题」建一个分类，再到分类下加题。
-                  </p>
-                ) : (
-                  <p className="mt-2 text-xs text-gray-400">
-                    在左侧选一个话题分类，即可在该分类下新建题目。
-                  </p>
-                )
-              )}
-            </div>
+                ) : undefined
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {questions.map((q) => (
-                <Link
+                <div
                   key={q.id}
-                  href={`/practice/${q.id}`}
-                  className="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
+                  className="group relative rounded-xl border border-line bg-surface p-4 shadow-card transition-all duration-150 ease-out-soft hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-hover"
                 >
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-md px-2 py-0.5 text-xs font-medium ${
-                        difficultyColor[q.difficulty] || "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {q.difficulty}
-                    </span>
-                    {!q.topicId && (
-                      <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-                        未分类
-                      </span>
-                    )}
-                    {q.visibility === "public" && (
-                      <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">
-                        已公开
-                      </span>
-                    )}
-                    {q.answerGeneratedByAi && (
-                      <span className="rounded-md bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
-                        🤖 AI 答案
-                      </span>
-                    )}
+                  <Link href={`/practice/${q.id}`} className="block">
+                    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                      <Badge difficulty={q.difficulty as "简单" | "中等" | "困难"} />
+                      {!q.topicId && <Badge variant="gray">未分类</Badge>}
+                      {q.visibility === "public" && <Badge variant="success">已公开</Badge>}
+                      {q.answerGeneratedByAi && (
+                        <Badge variant="violet">
+                          <Icon name="bot" size={12} />
+                          AI 答案
+                        </Badge>
+                      )}
+                    </div>
+                    <h3 className="font-semibold text-ink transition-colors group-hover:text-brand-600">
+                      {q.title}
+                    </h3>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {q.tags
+                        .split(",")
+                        .map((t) => t.trim())
+                        .filter(Boolean)
+                        .map((t) => (
+                          <span key={t} className="text-xs text-muted">
+                            #{t}
+                          </span>
+                        ))}
+                    </div>
+                  </Link>
+                  <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
+                    <DeleteQuestionButton
+                      questionId={q.id}
+                      title={q.title}
+                      variant="icon"
+                    />
                   </div>
-                  <h3 className="font-semibold text-gray-900 group-hover:text-brand-600">
-                    {q.title}
-                  </h3>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {q.tags
-                      .split(",")
-                      .map((t) => t.trim())
-                      .filter(Boolean)
-                      .map((t) => (
-                        <span key={t} className="text-xs text-gray-400">
-                          #{t}
-                        </span>
-                      ))}
-                  </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}

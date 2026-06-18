@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button, Icon, Input } from "@/components/ui";
 
 interface Props {
   questionId: string;
@@ -46,33 +47,27 @@ export function QuestionAdminControls({ questionId, isDelisted, manualHeat }: Pr
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <button
+      <Button
         onClick={toggleDelist}
         disabled={busy}
-        className={`rounded-lg px-3 py-1 text-sm font-medium disabled:opacity-60 ${
-          delisted
-            ? "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-            : "border border-red-200 bg-white text-red-600 hover:bg-red-50"
-        }`}
+        size="sm"
+        variant={delisted ? "secondary" : "danger"}
+        leftIcon={<Icon name={delisted ? "check" : "x"} size={14} />}
       >
         {delisted ? "已下架 · 恢复" : "下架"}
-      </button>
-      <span className="flex items-center gap-1 text-sm text-gray-500">
+      </Button>
+      <span className="flex items-center gap-1.5 text-sm text-muted">
         热度
-        <input
+        <Input
           type="number"
           min={0}
           value={heat}
           onChange={(e) => setHeat(e.target.value)}
-          className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+          className="w-20 py-1"
         />
-        <button
-          onClick={saveHeat}
-          disabled={busy}
-          className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-60"
-        >
+        <Button onClick={saveHeat} disabled={busy} size="sm" variant="secondary">
           保存
-        </button>
+        </Button>
       </span>
     </div>
   );

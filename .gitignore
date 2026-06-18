@@ -35,3 +35,6 @@ next-env.d.ts
 
 # misc / windows
 *.stackdump
+
+# 题库导出（每题一个 Markdown，按方向/话题分层）
+/exports

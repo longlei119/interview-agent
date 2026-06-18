@@ -3,13 +3,12 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { Button, ErrorBanner, Icon } from "@/components/ui";
 
 interface Props {
   questionId: string;
   isOwner: boolean;
-  // owner 用
   visibility?: string;
-  // 非 owner 用
   initialLiked?: boolean;
   initialLikeCount?: number;
 }
@@ -25,9 +24,7 @@ export function QuestionActions({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  // owner: 公开状态
   const [isPublic, setIsPublic] = useState(visibility === "public");
-  // 非 owner: 点赞状态
   const [liked, setLiked] = useState(initialLiked);
   const [likeCount, setLikeCount] = useState(initialLikeCount);
 
@@ -115,57 +112,70 @@ export function QuestionActions({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {isOwner ? (
-        <>
-          <Link
-            href={`/practice/${questionId}/edit`}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
-          >
-            编辑
-          </Link>
-          <button
-            onClick={toggleVisibility}
-            disabled={busy}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-60 ${
-              isPublic
-                ? "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            {isPublic ? "已公开 · 点击转私有" : "设为公开"}
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={busy}
-            className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-          >
-            删除
-          </button>
-        </>
-      ) : (
-        <>
-          <button
-            onClick={toggleLike}
-            disabled={busy}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-60 ${
-              liked
-                ? "border border-rose-300 bg-rose-50 text-rose-600 hover:bg-rose-100"
-                : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            {liked ? "❤️ 已赞" : "🤍 点赞"} {likeCount}
-          </button>
-          <button
-            onClick={handleClone}
-            disabled={busy}
-            className="rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60"
-          >
-            拉到我的题库
-          </button>
-        </>
-      )}
-      {error && <span className="text-sm text-red-600">{error}</span>}
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {isOwner ? (
+          <>
+            <Link
+              href={`/practice/${questionId}/edit`}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-xs font-medium text-ink transition-colors hover:bg-canvas"
+            >
+              <Icon name="edit" size={14} />
+              编辑
+            </Link>
+            <Button
+              onClick={toggleVisibility}
+              variant={isPublic ? "secondary" : "secondary"}
+              size="sm"
+              disabled={busy}
+              leftIcon={
+                <Icon name={isPublic ? "eye" : "check"} size={14} className={isPublic ? "text-emerald-600" : ""} />
+              }
+              className={isPublic ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50" : ""}
+            >
+              {isPublic ? "已公开 · 转私有" : "设为公开"}
+            </Button>
+            <Button
+              onClick={handleDelete}
+              variant="danger"
+              size="sm"
+              disabled={busy}
+              leftIcon={<Icon name="trash" size={14} />}
+            >
+              删除
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              onClick={toggleLike}
+              variant="secondary"
+              size="sm"
+              disabled={busy}
+              leftIcon={
+                <Icon
+                  name="heart"
+                  size={14}
+                  className={liked ? "text-rose-500" : ""}
+                />
+              }
+              className={liked ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100" : ""}
+            >
+              {liked ? "已赞" : "点赞"} {likeCount}
+            </Button>
+            <Button
+              onClick={handleClone}
+              variant="primary"
+              size="sm"
+              disabled={busy}
+              leftIcon={<Icon name="download" size={14} />}
+            >
+              拉到我的题库
+            </Button>
+          </>
+        )}
+      </div>
+      {error && <ErrorBanner>{error}</ErrorBanner>}
     </div>
   );
 }

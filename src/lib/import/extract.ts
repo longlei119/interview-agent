@@ -36,7 +36,7 @@ export async function extractFromText(
 ): Promise<ExtractedQuestion[]> {
   const text = rawText.trim();
   if (!text) return [];
-  const reply = await chat(extractFromTextMessages(text), {
+  const reply = await chat(await extractFromTextMessages(text), {
     role: "primary",
     temperature: 0.2,
   });
@@ -49,7 +49,7 @@ export async function extractFromImages(
   dataUrls: string[]
 ): Promise<ExtractedQuestion[]> {
   if (dataUrls.length === 0) return [];
-  const reply = await chat(extractFromImagesMessages(dataUrls), {
+  const reply = await chat(await extractFromImagesMessages(dataUrls), {
     role: "vision",
     temperature: 0.2,
   });

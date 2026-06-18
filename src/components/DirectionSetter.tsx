@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DIRECTIONS } from "@/lib/directions";
+import { Icon, Select } from "@/components/ui";
 
-// 顶部个人方向：显示当前方向，点「更改」切换为下拉，选后调 /api/me。
 export function DirectionSetter({ direction }: { direction: string | null }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -33,12 +33,12 @@ export function DirectionSetter({ direction }: { direction: string | null }) {
   if (editing) {
     return (
       <span className="inline-flex items-center gap-2 text-sm">
-        <span className="text-gray-400">我的方向</span>
-        <select
+        <span className="text-muted">我的方向</span>
+        <Select
           defaultValue={direction ?? ""}
           disabled={busy}
           onChange={(e) => e.target.value && save(e.target.value)}
-          className="rounded-lg border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+          className="w-auto py-1"
         >
           <option value="" disabled>
             选择方向
@@ -48,10 +48,10 @@ export function DirectionSetter({ direction }: { direction: string | null }) {
               {d}
             </option>
           ))}
-        </select>
+        </Select>
         <button
           onClick={() => setEditing(false)}
-          className="text-xs text-gray-400 hover:text-gray-600"
+          className="text-xs text-muted hover:text-ink"
         >
           取消
         </button>
@@ -60,15 +60,17 @@ export function DirectionSetter({ direction }: { direction: string | null }) {
   }
 
   return (
-    <span className="inline-flex items-center gap-2 text-sm text-gray-500">
+    <span className="inline-flex items-center gap-2 text-sm text-muted">
       我的方向：
-      <span className="rounded-md bg-brand-50 px-2 py-0.5 font-medium text-brand-600">
+      <span className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+        <Icon name="compass" size={12} />
         {direction || "未设置"}
       </span>
       <button
         onClick={() => setEditing(true)}
-        className="text-xs text-brand-600 hover:underline"
+        className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline"
       >
+        <Icon name="edit" size={12} />
         更改
       </button>
     </span>

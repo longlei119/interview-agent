@@ -18,7 +18,7 @@ export async function classifyQuestion(
 ): Promise<ClassifyDecision> {
   let reply: string;
   try {
-    reply = await chat(classifyMessages(q, topicOptions), {
+    reply = await chat(await classifyMessages(q, topicOptions), {
       role: "primary",
       temperature: 0.1,
     });

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { isValidDifficulty, isValidDirection } from "@/lib/directions";
 import { ADMIN_DEFAULT_MANUAL_HEAT } from "@/lib/heat";
+import { exportQuestionToFile } from "@/lib/export-question";
 
 // 新建题目：登录 + canCreate。默认私有，归当前用户所有。
 // 方向取用户个人方向（不再每题选）；可指定话题节点 topicId（null = 未分类）。
@@ -17,12 +18,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "你的加题权限已被管理员关闭" }, { status: 403 });
   }
 
-  const { difficulty, title, body, referenceAnswer, tags, topicId } =
+  const { difficulty, title, body, referenceAnswer, detailedAnswer, tags, topicId } =
     await req.json();
 
-  if (!difficulty || !title || !body) {
+  if (!difficulty || !title) {
     return NextResponse.json(
-      { error: "请填写难度、标题和题目内容" },
+      { error: "请填写难度和标题" },
       { status: 400 }
     );
   }
@@ -57,11 +58,15 @@ export async function POST(req: NextRequest) {
       title: String(title).trim(),
       body: String(body).trim(),
       referenceAnswer: typeof referenceAnswer === "string" ? referenceAnswer.trim() : "",
+      detailedAnswer: typeof detailedAnswer === "string" ? detailedAnswer.trim() : "",
       tags: typeof tags === "string" ? tags.trim() : "",
       visibility: "private",
       manualHeat,
     },
   });
+
+  // 异步导出到 exports/questions/方向/话题路径/标题.md，失败不影响创建
+  void exportQuestionToFile({ questionId: question.id });
 
   return NextResponse.json({ ok: true, id: question.id });
 }
