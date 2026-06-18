@@ -12,6 +12,8 @@ import { TopicTree } from "@/components/TopicTree";
 import { DirectionSetter } from "@/components/DirectionSetter";
 import { ExportLibraryButton } from "@/components/ExportLibraryButton";
 import { DeleteQuestionButton } from "@/components/DeleteQuestionButton";
+import { VisibilityToggle } from "@/components/VisibilityToggle";
+import { BatchVisibilityButton } from "@/components/BatchVisibilityButton";
 import { Badge, Card, EmptyState, Icon } from "@/components/ui";
 
 export default async function PracticePage({
@@ -26,7 +28,7 @@ export default async function PracticePage({
 
   const flatTopics = await prisma.topic.findMany({
     where: { userId: user.id },
-    select: { id: true, name: true, parentId: true, sortOrder: true },
+    select: { id: true, name: true, parentId: true, sortOrder: true, visibility: true },
   });
   const tree = buildTopicTree(flatTopics);
 
@@ -146,15 +148,23 @@ export default async function PracticePage({
               )}
               <span className="ml-1 text-xs text-muted">（{questions.length} 题）</span>
             </div>
-            {canCreateHere && (
-              <Link
-                href={newHref}
-                className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-brand-500 px-4 text-sm font-semibold text-white shadow-soft transition-all hover:bg-brand-600 active:scale-[0.98]"
-              >
-                <Icon name="plus" size={16} />
-                在「{activeName}」下新建
-              </Link>
-            )}
+            <div className="flex items-center gap-2">
+              {activeTopicId && activeTopicId !== "none" && (
+                <BatchVisibilityButton
+                  topicIds={subtreeIds}
+                  label={activeName}
+                />
+              )}
+              {canCreateHere && (
+                <Link
+                  href={newHref}
+                  className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-brand-500 px-4 text-sm font-semibold text-white shadow-soft transition-all hover:bg-brand-600 active:scale-[0.98]"
+                >
+                  <Icon name="plus" size={16} />
+                  在「{activeName}」下新建
+                </Link>
+              )}
+            </div>
           </div>
 
           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -230,7 +240,11 @@ export default async function PracticePage({
                         ))}
                     </div>
                   </Link>
-                  <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <VisibilityToggle
+                      questionId={q.id}
+                      currentVisibility={q.visibility}
+                    />
                     <DeleteQuestionButton
                       questionId={q.id}
                       title={q.title}

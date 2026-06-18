@@ -15,6 +15,8 @@ model User {
   role         String   @default("user") // user | admin
   canCreate    Boolean  @default(true) // 加题权限，管理员可关闭
   direction    String? // 用户方向，如「前端」
+  shareCode    String?  @unique // 8 位分享码
+  shareCodeSetAt DateTime @default(now()) // 重置时间
   createdAt    DateTime @default(now())
 
   questions         Question[] // 我创建/拥有的题
@@ -25,6 +27,8 @@ model User {
   views             QuestionView[]
   testPapers        TestPaper[]
   testPaperAttempts TestPaperAttempt[]
+  syncsFrom         SyncRecord[] @relation("SyncFrom")
+  syncsTo           SyncRecord[] @relation("SyncTo")
 }
 
 // 私人话题树：每个用户一棵，根节点 parentId 为 null，可任意嵌套。
@@ -34,6 +38,7 @@ model Topic {
   userId    String // 归属用户
   parentId  String? // 父话题，根节点为 null
   name      String
+  visibility String   @default("private") // private | public | force_off
   sortOrder Int      @default(0) // 同级排序
   createdAt DateTime @default(now())
 
@@ -60,6 +65,7 @@ model Question {
   importedByAi        Boolean @default(false) // 整题来自「导入题目」流水线，便于批量筛选核对
   tags            String     @db.Text // 逗号分隔
   visibility      String    @default("private") // private | public
+  forceHidden     Boolean   @default(false) // 父目录公开但此题强制隐藏
   isDelisted      Boolean   @default(false) // 管理员下架
   deletedAt       DateTime? // 软删除标记
   // 热度分量（分开存，便于改权重）
@@ -236,4 +242,26 @@ model TestPaperAttempt {
   @@index([paperId])
   @@index([userId])
   @@index([paperId, userId])
+}
+
+model SyncRecord {
+  id          String   @id @default(cuid())
+  fromUserId  String
+  toUserId    String
+  scope       String // all | topic | paper
+  scopeRefId  String? // topic 或 paper 的 id（scope=all 时为 null）
+  status      String   @default("pending") // pending | running | done | failed
+  error       String?  @db.Text // 失败原因
+  createdCount Int    @default(0) // 新建题数
+  skippedCount Int    @default(0) // 跳过题数
+  newTopicCount Int   @default(0)
+  newPaperCount Int   @default(0)
+  createdAt   DateTime @default(now())
+  finishedAt  DateTime? // 完成时间
+
+  fromUser User @relation("SyncFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("SyncTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([toUserId, createdAt])
+  @@index([fromUserId])
 }

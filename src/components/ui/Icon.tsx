@@ -38,7 +38,11 @@ export type IconName =
   | "file"
   | "play"
   | "arrow-left"
-  | "arrow-right";
+  | "arrow-right"
+  | "copy"
+  | "refresh"
+  | "share"
+  | "globe";
 
 interface IconProps extends SVGProps<SVGSVGElement> {
   name: IconName;
@@ -194,6 +198,28 @@ const paths: Record<IconName, ReactElement> = {
   play: <path d="M6 4v16l14-8z" />,
   "arrow-left": <path d="M19 12H5M5 12l7-7M5 12l7 7" />,
   "arrow-right": <path d="M5 12h14M19 12l-7-7M19 12l-7 7" />,
+  copy: (
+    <>
+      <rect x="8" y="3" width="12" height="16" rx="2" />
+      <path d="M4 8v14a2 2 0 0 0 2 2h10" />
+    </>
+  ),
+  refresh: <path d="M3 3v6h6M21 21v-6h-6M21 3a9 9 0 0 0-5.5-1.9A9 9 0 0 0 6.3 5.3L3 8M3 21a9 9 0 0 0 5.5 1.9A9 9 0 0 0 17.7 18.7L21 16" />,
+  share: (
+    <>
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="6" r="3" />
+      <circle cx="18" cy="18" r="3" />
+      <path d="M8.7 10.7 15.3 7.3M8.7 13.3l6.6 3.4" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3a15.3 15.3 0 0 1 0 18" />
+      <path d="M12 3a12 12 0 0 0 0 18" />
+    </>
+  ),
 };
 
 export function Icon({ name, size = 18, className, ...rest }: IconProps) {

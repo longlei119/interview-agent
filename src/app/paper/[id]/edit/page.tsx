@@ -69,8 +69,9 @@ export default async function EditPaperPage({
         topics={tree}
         initial={{
           title: paper.title,
-          description: paper.description,
+          description: paper.description ?? "",
           timeLimit: paper.timeLimit,
+          isPublic: paper.isPublic,
           questionIds: paper.items.map((item) => item.questionId),
         }}
       />

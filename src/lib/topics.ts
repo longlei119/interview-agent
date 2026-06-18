@@ -6,6 +6,7 @@ export interface TopicNode {
   name: string;
   parentId: string | null;
   sortOrder: number;
+  visibility?: string;
   children: TopicNode[];
 }
 
@@ -14,6 +15,7 @@ interface FlatTopic {
   name: string;
   parentId: string | null;
   sortOrder: number;
+  visibility?: string;
 }
 
 // 扁平列表 → 树（按 sortOrder 再按名称排序）

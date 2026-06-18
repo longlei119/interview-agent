@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword, signToken, setSessionCookie } from "@/lib/auth";
+import { generateShareCode } from "@/lib/share-code";
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
         name,
         passwordHash: await hashPassword(password),
         role: isAdmin ? "admin" : "user",
+        shareCode: await generateShareCode(prisma),
       },
     });
 

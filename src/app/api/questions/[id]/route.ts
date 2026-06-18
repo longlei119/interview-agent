@@ -51,6 +51,9 @@ export async function PATCH(
     if (body.visibility === "public" || body.visibility === "private") {
       data.visibility = body.visibility;
     }
+    if (typeof body.forceHidden === "boolean") {
+      data.forceHidden = body.forceHidden;
+    }
     // 移动话题：null = 未分类；非空必须是自己的话题
     if (body.topicId !== undefined) {
       if (body.topicId === null) {

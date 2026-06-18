@@ -36,6 +36,7 @@ interface Props {
     title: string;
     description: string;
     timeLimit: number | null;
+    isPublic?: boolean;
     questionIds: string[];
   };
 }
@@ -43,6 +44,7 @@ interface Props {
 export function PaperForm({ mode, paperId, userQuestions, topics, initial }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
   const [timeLimit, setTimeLimit] = useState<string>(
     initial?.timeLimit != null ? String(initial.timeLimit) : "30"
   );
@@ -52,6 +54,7 @@ export function PaperForm({ mode, paperId, userQuestions, topics, initial }: Pro
   const [filterTopic, setFilterTopic] = useState<string | null>(null);
   const [filterDifficulty, setFilterDifficulty] = useState("");
   const [search, setSearch] = useState("");
+  const [isPublic, setIsPublic] = useState(initial?.isPublic ?? false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -97,7 +100,9 @@ export function PaperForm({ mode, paperId, userQuestions, topics, initial }: Pro
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: title.trim(),
+            description: description.trim(),
             timeLimit: timeLimit ? Number(timeLimit) : null,
+            isPublic,
             questionIds: Array.from(selectedIds),
           }),
         });
@@ -114,7 +119,9 @@ export function PaperForm({ mode, paperId, userQuestions, topics, initial }: Pro
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: title.trim(),
+            description: description.trim(),
             timeLimit: timeLimit ? Number(timeLimit) : null,
+            isPublic,
             questionIds: Array.from(selectedIds),
           }),
         });
@@ -167,25 +174,46 @@ export function PaperForm({ mode, paperId, userQuestions, topics, initial }: Pro
   return (
     <div>
       <Card padded className="mb-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <Input
-              placeholder="试卷标题"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <Input
+                placeholder="试卷标题"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-muted">
+              限时
+              <Input
+                className="w-16 text-center"
+                type="number"
+                min={1}
+                value={timeLimit}
+                onChange={(e) => setTimeLimit(e.target.value)}
+              />
+              分钟
+            </label>
           </div>
-          <label className="flex items-center gap-2 text-sm text-muted">
-            限时
-            <Input
-              className="w-16 text-center"
-              type="number"
-              min={1}
-              value={timeLimit}
-              onChange={(e) => setTimeLimit(e.target.value)}
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="试卷描述（可选）"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="min-w-0 flex-1 rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
             />
-            分钟
-          </label>
+            <label className="flex items-center gap-2 text-sm text-muted whitespace-nowrap cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                className="h-4 w-4 rounded border-line text-brand-500 focus:ring-brand-400"
+              />
+              <Icon name="globe" size={14} className={isPublic ? "text-emerald-500" : "text-muted"} />
+              公开试卷
+            </label>
+          </div>
         </div>
       </Card>
 

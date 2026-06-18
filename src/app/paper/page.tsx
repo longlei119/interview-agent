@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { Badge, Button, EmptyState, Icon } from "@/components/ui";
 import { DeletePaperButton } from "@/components/DeletePaperButton";
+import { PaperVisibilityToggle } from "@/components/PaperVisibilityToggle";
 
 export default async function PaperListPage() {
   const user = await getCurrentUser();
@@ -64,6 +65,7 @@ export default async function PaperListPage() {
                   <Icon name="clock" size={12} />
                   {paper.timeLimit ? `限时 ${paper.timeLimit} 分钟` : "不限时"}
                 </span>
+                <PaperVisibilityToggle paperId={paper.id} isPublic={paper.isPublic} />
                 {paper.isPublic && <Badge variant="success">已公开</Badge>}
               </div>
               <div className="mt-auto flex gap-2">

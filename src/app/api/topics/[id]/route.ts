@@ -22,13 +22,20 @@ export async function PATCH(
     return NextResponse.json({ error: "话题不存在" }, { status: 404 });
   }
 
-  const { name } = await req.json();
-  const trimmed = typeof name === "string" ? name.trim() : "";
-  if (!trimmed) {
-    return NextResponse.json({ error: "请填写话题名称" }, { status: 400 });
+  const body = await req.json();
+  const data: Record<string, unknown> = {};
+
+  const trimmed = typeof body.name === "string" ? body.name.trim() : "";
+  if (trimmed) data.name = trimmed;
+  if (body.visibility === "private" || body.visibility === "public" || body.visibility === "force_off") {
+    data.visibility = body.visibility;
   }
 
-  await prisma.topic.update({ where: { id }, data: { name: trimmed } });
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "没有可更新的字段" }, { status: 400 });
+  }
+
+  await prisma.topic.update({ where: { id }, data });
   return NextResponse.json({ ok: true });
 }
 

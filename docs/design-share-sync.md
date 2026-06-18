@@ -95,11 +95,14 @@ model SyncRecord {
   toUserId    String // 同步到的用户
   scope       String // all | topic | paper
   scopeRefId  String? // topic 或 paper 的 id（scope=all 时为 null）
+  status      String   @default("pending") // pending | running | done | failed
+  error       String?  @db.Text // 失败原因
   createdCount Int    @default(0) // 新建题数
   skippedCount Int    @default(0) // 跳过题数
   newTopicCount Int   @default(0)
   newPaperCount Int   @default(0)
   createdAt   DateTime @default(now())
+  finishedAt  DateTime? // 完成时间
 
   fromUser User @relation("SyncFrom", fields: [fromUserId], references: [id])
   toUser   User @relation("SyncTo", fields: [toUserId], references: [id])
@@ -149,15 +152,17 @@ async function isQuestionVisibleToCode(question: Question): Promise<boolean> {
 ### 3.3 计算某道 Question 是否进广场
 
 ```ts
-function isInExplore(question: Question): boolean {
-  // 广场只看主动公开，不看继承
-  return question.visibility === "public" && !question.forceHidden && !question.isDelisted;
+async function isInExplore(question: Question): Promise<boolean> {
+  if (question.forceHidden || question.isDelisted) return false;
+  // 主动公开 → 进广场
+  if (question.visibility === "public") return true;
+  // 目录公开（继承）→ 也进广场
+  if (question.topicId) return await isTopicVisibleToCode(question.topicId);
+  return false;
 }
 ```
 
-**注意**：广场只展示 `visibility=public` 且非 `forceHidden` 的题。继承自目录公开的题（`visibility=private` 但 topic 公开）**不进广场**，只在凭码访问时可见。理由：广场是面向所有人的公开流，应有更严格门槛；目录公开是面向"持码人"的半私有分享。
-
-**待你确认**：这条规则是否符合预期？还是希望"目录公开的题也进广场"？两种都合理，我倾向前者（更可控），但如果你希望最大化曝光，改成后者也行。
+**决议**：目录公开的题也进广场。最大程度曝光公开内容，降低理解门槛。
 
 ### 3.4 列出某用户公开主页可见内容
 
@@ -250,21 +255,41 @@ async function getPublicProfile(shareCode: string) {
 }
 ```
 
-**响应（异步版第一版先用同步）：**
+**同步 API 响应（异步模式）：**
+
+同步操作通过 SyncRecord 跟踪进度，后端异步执行，前端轮询状态。
 
 ```ts
+// 提交同步请求 → 202
 {
   ok: true,
-  result: {
-    createdTopics: number,
-    createdQuestions: number,
-    skippedQuestions: number,
-    createdTopicMap: { [fromTopicId: string]: string }, // 源 id → 新 id，便于前端提示
-  }
+  syncRecordId: string, // 轮询此 id
+  status: "pending" | "running" | "done" | "failed",
 }
 ```
 
-题量过大（>200）时返回 202 + jobId，前端轮询。第一版不做异步，先跑同步版，性能不够再加。
+**`GET /api/sync/status?id=SYNC_RECORD_ID`：**
+
+```ts
+// 轮询响应
+{
+  ok: true,
+  status: "pending" | "running" | "done" | "failed",
+  progress?: {
+    createdTopics: number,
+    createdQuestions: number,
+    skippedQuestions: number,
+    createdTopicMap: { [fromTopicId: string]: string },
+  },
+  error?: string, // status=failed 时
+}
+```
+
+SyncRecord 生命周期：
+1. `pending`：请求已接受，排队等待执行
+2. `running`：正在执行同步
+3. `done`：同步完成，`progress` 字段包含最终统计
+4. `failed`：同步失败，`error` 字段包含错误信息
 
 ## 5. 同步算法
 
@@ -539,9 +564,9 @@ Topic:  private ⇄ public ⇄ force_off
 
 每步完成后跑测试，确保不破坏现有功能。
 
-## 10. 待确认点
+## 10. 已确认
 
-1. **广场是否包含目录公开的题？** 当前设计：只展示 `visibility=public` 主动公开的题；目录公开（继承）的题只在凭码访问时可见，不进广场。如果你希望目录公开的题也进广场，调整 `isInExplore`。
-2. **同步进度页是否做？** 题量 < 200 时同步版够用，进度页可省。如果你预期会同步几百题以上，第一版就上异步。
-3. **SyncRecord 同步记录页是否做？** 第一版可省，后续按需。
-4. **重置码的频率限制？** 是否限制每分钟/每天重置次数？防止恶意刷。
+1. **广场是否包含目录公开的题？** ✅ 是。目录公开的题也进广场，`isInExplore` 增加 Topic 可见性传播逻辑。
+2. **同步进度页是否做？** ✅ 做。同步走异步模式：提交返回 202 + syncRecordId，前端轮询 `GET /api/sync/status`。
+3. **SyncRecord 同步记录页是否做？** ✅ 做。在设置页增加"我的同步记录"入口，列表展示历史同步记录。
+4. **重置码的频率限制？** ✅ 一天一次。`POST /api/me/share-code/reset` 检查 `shareCodeSetAt`，距上次重置不足 24 小时则拒绝。

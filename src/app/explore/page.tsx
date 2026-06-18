@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { DIRECTIONS, DIFFICULTIES } from "@/lib/directions";
 import { computeHeat } from "@/lib/heat";
+import { isInExplore } from "@/lib/visibility";
 import { Badge, EmptyState, Icon } from "@/components/ui";
 
 export default async function ExplorePage({
@@ -16,9 +17,14 @@ export default async function ExplorePage({
 
   const { direction, difficulty } = await searchParams;
 
-  const rows = await prisma.question.findMany({
+  // 收集所有需要判可见性的题目：主动公开 + 可能通过目录公开（继承）的
+  const candidates = await prisma.question.findMany({
     where: {
-      visibility: "public",
+      OR: [
+        { visibility: "public" },
+        // 私有但可能继承自公开目录：forceHidden=false 且 topicId 不为 null
+        { visibility: "private", forceHidden: false, topicId: { not: null } },
+      ],
       isDelisted: false,
       deletedAt: null,
       ...(direction ? { direction } : {}),
@@ -31,6 +37,10 @@ export default async function ExplorePage({
       title: true,
       tags: true,
       ownerId: true,
+      topicId: true,
+      visibility: true,
+      forceHidden: true,
+      isDelisted: true,
       manualHeat: true,
       cloneCount: true,
       likeCount: true,
@@ -40,7 +50,13 @@ export default async function ExplorePage({
     },
   });
 
-  const questions = rows
+  // 过滤：仅保留对广场可见的题目（主动公开 + 继承自公开目录）
+  const filtered: typeof candidates = [];
+  for (const q of candidates) {
+    if (await isInExplore(q)) filtered.push(q);
+  }
+
+  const questions = filtered
     .map((q) => ({
       ...q,
       heat: computeHeat({

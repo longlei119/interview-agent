@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon, IconName } from "@/components/ui";
+import { SyncModal } from "@/components/SyncModal";
 
 interface NavItem {
   href: string;
@@ -29,6 +30,7 @@ export function Navbar({
   canCreate: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [syncOpen, setSyncOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -83,7 +85,17 @@ export function Navbar({
                   {item.label}
                 </Link>
               ))}
+              <button
+                onClick={() => setSyncOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-50"
+              >
+                <Icon name="share" size={16} />
+                同步他人题库
+              </button>
               <div className="ml-2 flex items-center gap-1 border-l border-line pl-2">
+                <Link href="/settings" className={linkClass("/settings")}>
+                  <Icon name="settings" size={16} />
+                </Link>
                 <span className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted">
                   <Icon name="user" size={14} />
                   {userName}
@@ -155,6 +167,24 @@ export function Navbar({
                   {item.label}
                 </Link>
               ))}
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  setSyncOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-50"
+              >
+                <Icon name="share" size={16} />
+                同步他人题库
+              </button>
+              <Link
+                href="/settings"
+                className={linkClass("/settings")}
+                onClick={() => setOpen(false)}
+              >
+                <Icon name="settings" size={16} />
+                设置
+              </Link>
             </div>
           ) : (
             <div className="flex flex-col gap-0.5">
@@ -168,6 +198,8 @@ export function Navbar({
           )}
         </nav>
       )}
+
+      <SyncModal open={syncOpen} onClose={() => setSyncOpen(false)} />
     </header>
   );
 }
