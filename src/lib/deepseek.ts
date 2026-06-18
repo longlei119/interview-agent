@@ -14,90 +14,158 @@ export interface ChatMessage {
   content: string | ContentPart[];
 }
 
-// 模型角色：现有调用走 primary；导入流水线用 vision（图片识别）和 answer（补答案）。
-export type ModelRole = "primary" | "vision" | "answer";
+export type ModelRole = "primary" | "vision" | "answer" | "asr";
 
-function getConfigFor(role: ModelRole) {
-  const base = {
-    apiKey: process.env.DEEPSEEK_API_KEY,
-    baseUrl: process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com",
-    model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+interface ResolvedModelConfig {
+  source: "db" | "env";
+  id?: string;
+  role: ModelRole;
+  name: string;
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+}
+
+function trimBaseUrl(baseUrl: string): string {
+  return baseUrl.trim().replace(/\/+$/, "");
+}
+
+function envValue(value: string | undefined): string {
+  return value?.trim() ?? "";
+}
+
+function getEnvConfigFor(role: ModelRole): ResolvedModelConfig | null {
+  const primary = {
+    apiKey: envValue(process.env.DEEPSEEK_API_KEY),
+    baseUrl: trimBaseUrl(envValue(process.env.DEEPSEEK_BASE_URL) || "https://api.deepseek.com"),
+    model: envValue(process.env.DEEPSEEK_MODEL) || "deepseek-chat",
   };
-  if (role === "vision") {
-    // apiKey/baseUrl 回落主模型，但 model 无缺省（空 = 未配置，作为预留插槽）
-    return {
-      apiKey: process.env.VISION_API_KEY ?? base.apiKey,
-      baseUrl: process.env.VISION_BASE_URL ?? base.baseUrl,
-      model: process.env.VISION_MODEL ?? "",
-    };
+
+  if (role === "primary") {
+    if (!primary.apiKey || !primary.model) return null;
+    return { source: "env", role, name: "环境变量主模型", ...primary };
   }
+
   if (role === "answer") {
-    // 各项缺省回落主模型 → 不配也能用 deepseek 补答案
-    return {
-      apiKey: process.env.ANSWER_API_KEY ?? base.apiKey,
-      baseUrl: process.env.ANSWER_BASE_URL ?? base.baseUrl,
-      model: process.env.ANSWER_MODEL || base.model,
+    const config = {
+      apiKey: envValue(process.env.ANSWER_API_KEY) || primary.apiKey,
+      baseUrl: trimBaseUrl(envValue(process.env.ANSWER_BASE_URL) || primary.baseUrl),
+      model: envValue(process.env.ANSWER_MODEL) || primary.model,
     };
+    if (!config.apiKey || !config.model) return null;
+    return { source: "env", role, name: "环境变量答案模型", ...config };
   }
-  return base;
+
+  if (role === "vision") {
+    const config = {
+      apiKey: envValue(process.env.VISION_API_KEY) || primary.apiKey,
+      baseUrl: trimBaseUrl(envValue(process.env.VISION_BASE_URL) || primary.baseUrl),
+      model: envValue(process.env.VISION_MODEL),
+    };
+    if (!config.apiKey || !config.model) return null;
+    return { source: "env", role, name: "环境变量视觉模型", ...config };
+  }
+
+  if (role === "asr") {
+    const config = {
+      apiKey: envValue(process.env.ASR_API_KEY) || primary.apiKey,
+      baseUrl: trimBaseUrl(envValue(process.env.ASR_BASE_URL) || primary.baseUrl),
+      model: envValue(process.env.ASR_MODEL) || "whisper-1",
+    };
+    if (!config.apiKey || !config.model) return null;
+    return { source: "env", role, name: "环境变量语音识别模型", ...config };
+  }
+
+  return null;
 }
 
-export function isConfigured(): boolean {
-  return Boolean(process.env.DEEPSEEK_API_KEY);
+async function getDbConfigsFor(role: ModelRole): Promise<ResolvedModelConfig[]> {
+  const { prisma } = await import("./db");
+  const rows = await prisma.aiModelConfig.findMany({
+    where: { role, enabled: true },
+    orderBy: [{ isDefault: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+
+  return rows
+    .filter((row) => row.apiKey.trim() && row.baseUrl.trim() && row.model.trim())
+    .map((row) => ({
+      source: "db" as const,
+      id: row.id,
+      role,
+      name: row.name,
+      apiKey: row.apiKey.trim(),
+      baseUrl: trimBaseUrl(row.baseUrl),
+      model: row.model.trim(),
+    }));
 }
 
-// 视觉模型需 apiKey 和 model 都齐全才算可用（model 是预留插槽，用户后配）
-export function isVisionConfigured(): boolean {
-  const { apiKey, model } = getConfigFor("vision");
-  return Boolean(apiKey && model);
+async function resolveModelConfigs(role: ModelRole): Promise<ResolvedModelConfig[]> {
+  const configs = await getDbConfigsFor(role);
+  const envConfig = getEnvConfigFor(role);
+  if (envConfig) configs.push(envConfig);
+
+  if (role === "answer") {
+    const primaryConfigs = await getDbConfigsFor("primary");
+    configs.push(
+      ...primaryConfigs.map((config) => ({ ...config, role, name: `${config.name}（主模型兜底）` }))
+    );
+    const primaryEnv = getEnvConfigFor("primary");
+    if (primaryEnv) {
+      configs.push({ ...primaryEnv, role, name: "环境变量主模型兜底" });
+    }
+  }
+
+  return configs;
 }
 
-export class DeepSeekNotConfiguredError extends Error {
-  constructor() {
-    super("尚未配置 DEEPSEEK_API_KEY，请在 .env.local 中填入你的 DeepSeek API key");
-    this.name = "DeepSeekNotConfiguredError";
+function summarizeError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.replace(/Bearer\s+[A-Za-z0-9._\-]+/g, "Bearer ***").slice(0, 500);
+}
+
+async function recordModelFailure(config: ResolvedModelConfig, error: unknown) {
+  if (config.source !== "db" || !config.id) return;
+  try {
+    const { prisma } = await import("./db");
+    await prisma.aiModelConfig.update({
+      where: { id: config.id },
+      data: { lastErrorAt: new Date(), lastError: summarizeError(error) },
+    });
+  } catch {
+    // 失败记录不应影响用户请求。
   }
 }
 
-export class VisionModelNotConfiguredError extends Error {
-  constructor() {
-    super("尚未配置视觉识别模型（VISION_MODEL），暂时无法从图片识别题目，请改用粘贴文本");
-    this.name = "VisionModelNotConfiguredError";
+async function clearModelFailure(config: ResolvedModelConfig) {
+  if (config.source !== "db" || !config.id) return;
+  try {
+    const { prisma } = await import("./db");
+    await prisma.aiModelConfig.update({
+      where: { id: config.id },
+      data: { lastErrorAt: null, lastError: null },
+    });
+  } catch {
+    // 成功清理失败状态不是关键路径。
   }
 }
 
-// 接口返回非 2xx 时抛出，带上 status 供调用方判断是否值得重试（5xx/429 多为瞬时）
-export class DeepSeekApiError extends Error {
-  status: number;
-  constructor(status: number, body: string) {
-    super(`DeepSeek 接口错误 ${status}: ${body}`);
-    this.name = "DeepSeekApiError";
-    this.status = status;
-  }
-}
-
-// 一次性返回完整结果
-export async function chat(
+function buildChatBody(
+  model: string,
   messages: ChatMessage[],
-  options: { temperature?: number; role?: ModelRole } = {}
-): Promise<string> {
-  const role = options.role ?? "primary";
-  const { apiKey, baseUrl, model } = getConfigFor(role);
-  if (role === "vision" && !model) throw new VisionModelNotConfiguredError();
-  if (!apiKey) throw new DeepSeekNotConfiguredError();
+  temperature: number,
+  stream: boolean
+) {
+  return JSON.stringify({ model, messages, temperature, stream });
+}
 
-  const res = await fetch(`${baseUrl}/chat/completions`, {
+async function requestChat(config: ResolvedModelConfig, messages: ChatMessage[], temperature: number) {
+  const res = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${config.apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: options.temperature ?? 0.7,
-      stream: false,
-    }),
+    body: buildChatBody(config.model, messages, temperature, false),
   });
 
   if (!res.ok) {
@@ -106,39 +174,36 @@ export async function chat(
   }
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.content ?? "";
+  const content = data.choices?.[0]?.message?.content;
+  if (typeof content !== "string") {
+    throw new Error("AI 接口返回格式异常：缺少 choices[0].message.content");
+  }
+  return content;
 }
 
-// 流式返回，逐块输出文本，供 ReadableStream 使用
-export async function* chatStream(
+async function openChatStream(
+  config: ResolvedModelConfig,
   messages: ChatMessage[],
-  options: { temperature?: number; role?: ModelRole } = {}
-): AsyncGenerator<string> {
-  const role = options.role ?? "primary";
-  const { apiKey, baseUrl, model } = getConfigFor(role);
-  if (role === "vision" && !model) throw new VisionModelNotConfiguredError();
-  if (!apiKey) throw new DeepSeekNotConfiguredError();
-
-  const res = await fetch(`${baseUrl}/chat/completions`, {
+  temperature: number
+): Promise<Response> {
+  const res = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${config.apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: options.temperature ?? 0.7,
-      stream: true,
-    }),
+    body: buildChatBody(config.model, messages, temperature, true),
   });
 
   if (!res.ok || !res.body) {
     const text = await res.text().catch(() => "");
     throw new DeepSeekApiError(res.status, text);
   }
+  return res;
+}
 
-  const reader = res.body.getReader();
+async function* readChatStream(res: Response): AsyncGenerator<string> {
+  const reader = res.body!.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 
@@ -164,4 +229,155 @@ export async function* chatStream(
       }
     }
   }
+}
+
+export function isConfigured(): boolean {
+  return Boolean(getEnvConfigFor("primary"));
+}
+
+export async function isVisionConfigured(): Promise<boolean> {
+  return (await resolveModelConfigs("vision")).length > 0;
+}
+
+export async function isAsrConfigured(): Promise<boolean> {
+  return (await resolveModelConfigs("asr")).length > 0;
+}
+
+export async function getEnvFallbackStatus() {
+  const toStatus = (role: ModelRole) => {
+    const config = getEnvConfigFor(role);
+    return config
+      ? { configured: true, baseUrl: config.baseUrl, model: config.model }
+      : { configured: false };
+  };
+
+  return {
+    primary: toStatus("primary"),
+    answer: toStatus("answer"),
+    vision: toStatus("vision"),
+    asr: toStatus("asr"),
+  };
+}
+
+export class DeepSeekNotConfiguredError extends Error {
+  constructor() {
+    super("尚未配置可用的 AI 模型，请在管理后台配置模型，或设置环境变量兜底");
+    this.name = "DeepSeekNotConfiguredError";
+  }
+}
+
+export class VisionModelNotConfiguredError extends Error {
+  constructor() {
+    super("尚未配置可用的视觉识别模型，请在管理后台配置视觉模型，或改用粘贴文本");
+    this.name = "VisionModelNotConfiguredError";
+  }
+}
+
+export class DeepSeekApiError extends Error {
+  status: number;
+  constructor(status: number, body: string) {
+    super(`AI 接口错误 ${status}: ${body}`);
+    this.name = "DeepSeekApiError";
+    this.status = status;
+  }
+}
+
+export async function chat(
+  messages: ChatMessage[],
+  options: { temperature?: number; role?: ModelRole } = {}
+): Promise<string> {
+  const role = options.role ?? "primary";
+  const configs = await resolveModelConfigs(role);
+  if (configs.length === 0) {
+    if (role === "vision") throw new VisionModelNotConfiguredError();
+    throw new DeepSeekNotConfiguredError();
+  }
+
+  let lastError: unknown;
+  for (const config of configs) {
+    try {
+      const result = await requestChat(config, messages, options.temperature ?? 0.7);
+      await clearModelFailure(config);
+      return result;
+    } catch (error) {
+      lastError = error;
+      await recordModelFailure(config, error);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("AI 模型全部调用失败");
+}
+
+export async function* chatStream(
+  messages: ChatMessage[],
+  options: { temperature?: number; role?: ModelRole } = {}
+): AsyncGenerator<string> {
+  const role = options.role ?? "primary";
+  const configs = await resolveModelConfigs(role);
+  if (configs.length === 0) throw new DeepSeekNotConfiguredError();
+
+  let lastError: unknown;
+  for (const config of configs) {
+    try {
+      const res = await openChatStream(config, messages, options.temperature ?? 0.7);
+      await clearModelFailure(config);
+      yield* readChatStream(res);
+      return;
+    } catch (error) {
+      lastError = error;
+      await recordModelFailure(config, error);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("AI 模型全部调用失败");
+}
+
+// 语音识别转文字（/audio/transcriptions）
+export async function transcribeAudio(audioFile: Blob): Promise<string> {
+  const configs = await resolveModelConfigs("asr");
+  if (configs.length === 0) {
+    throw new DeepSeekNotConfiguredError();
+  }
+
+  let lastError: unknown;
+  for (const config of configs) {
+    try {
+      const form = new FormData();
+      form.append("file", audioFile);
+      form.append("model", config.model);
+      form.append("language", "zh");
+      form.append("response_format", "text");
+
+      const res = await fetch(`${config.baseUrl}/audio/transcriptions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
+        },
+        body: form,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new DeepSeekApiError(res.status, text);
+      }
+
+      const contentType = res.headers.get("content-type") || "";
+      let text: string;
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+        text = typeof data.text === "string" ? data.text : String(data.text ?? "");
+      } else {
+        text = await res.text();
+      }
+
+      const result = text.trim();
+      await clearModelFailure(config);
+      return result;
+    } catch (error) {
+      lastError = error;
+      await recordModelFailure(config, error);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("语音识别模型全部调用失败");
 }
