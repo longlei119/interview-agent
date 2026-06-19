@@ -1,10 +1,10 @@
 // SQLite → MySQL 数据迁移（一次性脚本）
-// 用法：npx tsx scripts/migrate-sqlite-to-mysql.ts
+// 用法：SQLITE_PATH=/home/ubuntu/data/interview.db npx tsx scripts/migrate-sqlite-to-mysql.ts
 
 import Database from "better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 
-const SQLITE_PATH = "prisma/dev.db";
+const SQLITE_PATH = process.env.SQLITE_PATH || "prisma/dev.db";
 
 function toDate(v: unknown): Date | null {
   if (v == null) return null;
@@ -57,19 +57,20 @@ async function main() {
   const sqlite = new Database(SQLITE_PATH, { readonly: true });
 
   const tables = [
-    ["user", ["createdAt"], ["canCreate"]],
-    ["topic", ["createdAt"]],
-    ["question", ["createdAt", "deletedAt"], ["answerGeneratedByAi", "importedByAi", "isDelisted"]],
-    ["testPaper", ["createdAt", "updatedAt"], ["isPublic"]],
-    ["testPaperItem", []],
-    ["aiModelConfig", ["createdAt", "updatedAt", "lastErrorAt"], ["enabled", "isDefault"]],
-    ["aiPromptConfig", ["createdAt", "updatedAt"], ["enabled"]],
-    ["questionLike", ["createdAt"]],
-    ["questionView", ["createdAt"]],
-    ["practiceRecord", ["createdAt"]],
-    ["interviewSession", ["createdAt"]],
-    ["interviewMessage", ["createdAt"]],
-    ["testPaperAttempt", ["startedAt", "finishedAt"]],
+    ["User", ["createdAt", "shareCodeSetAt"], ["canCreate"]],
+    ["Topic", ["createdAt"]],
+    ["Question", ["createdAt", "deletedAt"], ["answerGeneratedByAi", "importedByAi", "isDelisted", "forceHidden"]],
+    ["QuestionLike", ["createdAt"]],
+    ["QuestionView", ["createdAt"]],
+    ["PracticeRecord", ["createdAt"]],
+    ["InterviewSession", ["createdAt"]],
+    ["InterviewMessage", ["createdAt"]],
+    ["AiModelConfig", ["createdAt", "updatedAt", "lastErrorAt"], ["enabled", "isDefault"]],
+    ["AiPromptConfig", ["createdAt", "updatedAt"], ["enabled"]],
+    ["TestPaper", ["createdAt", "updatedAt"], ["isPublic"]],
+    ["TestPaperItem", []],
+    ["TestPaperAttempt", ["startedAt", "finishedAt"]],
+    // SyncRecord sqlite 中不存在，跳过
   ] as const;
 
   for (const [table, dateFields, boolFields] of tables) {
