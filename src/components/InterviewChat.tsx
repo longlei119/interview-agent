@@ -235,10 +235,11 @@ export function InterviewChat({
           />
           <div className="mt-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {stt.supported ? (
+              {stt.supported || stt.serverAvailable ? (
                 <>
                   <button
                     onClick={toggleMic}
+                    title={stt.serverAvailable && !stt.supported ? "当前浏览器不支持原生识别，使用后端 ASR 录音识别" : undefined}
                     className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                       stt.listening
                         ? "bg-brand-500 text-white shadow-soft hover:bg-brand-600"
@@ -260,7 +261,7 @@ export function InterviewChat({
                       </>
                     )}
                   </button>
-                  {stt.serverAvailable && (
+                  {stt.supported && stt.serverAvailable && (
                     <button
                       type="button"
                       disabled={stt.listening}

@@ -135,7 +135,16 @@ export function VoiceInput({ onText, getCurrentText, className = "" }: Props) {
   async function startNative() {
     const rec = getNativeRecognition();
     if (!rec) {
-      setError("当前浏览器不支持原生语音识别，请用 Chrome/Edge，或切换到高精度模式");
+      // iOS Safari/Chrome 没有 SpeechRecognition API
+      if (serverAvailable) {
+        // 后端 ASR 可用：直接走 server 模式
+        setMode("server");
+        startServer();
+      } else if (typeof window !== "undefined" && !window.isSecureContext) {
+        setError("当前为 HTTP 访问，iOS 要求 HTTPS 才能用麦克风，请联系管理员启用 HTTPS");
+      } else {
+        setError("当前浏览器不支持语音识别，请用电脑 Chrome/Edge 访问，或联系管理员配置语音服务");
+      }
       return;
     }
     rec.lang = "zh-CN";
@@ -287,10 +296,14 @@ export function VoiceInput({ onText, getCurrentText, className = "" }: Props) {
       setListening(true);
       setError("");
     } catch (e) {
+      const notAllowed = e instanceof Error && e.name === "NotAllowedError";
+      const insecure = typeof window !== "undefined" && !window.isSecureContext;
       setError(
-        e instanceof Error && e.name === "NotAllowedError"
-          ? "麦克风权限被拒绝"
-          : "无法启动录音"
+        insecure
+          ? "当前为 HTTP 访问，iOS 要求 HTTPS 才能用麦克风，请联系管理员启用 HTTPS"
+          : notAllowed
+            ? "麦克风权限被拒绝，请在浏览器地址栏允许麦克风"
+            : "无法启动录音"
       );
       setListening(false);
     }

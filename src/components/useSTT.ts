@@ -207,7 +207,15 @@ export function useSTT(onTranscript: (text: string) => void) {
       setListening(true);
       setError("");
     } catch (e) {
-      setError(e instanceof Error && e.name === "NotAllowedError" ? "麦克风权限被拒绝" : "无法录音");
+      const notAllowed = e instanceof Error && e.name === "NotAllowedError";
+      const insecure = typeof window !== "undefined" && !window.isSecureContext;
+      setError(
+        insecure
+          ? "当前为 HTTP 访问，iOS 要求 HTTPS 才能用麦克风，请联系管理员启用 HTTPS"
+          : notAllowed
+            ? "麦克风权限被拒绝"
+            : "无法录音"
+      );
       setListening(false);
     }
   }, []);
