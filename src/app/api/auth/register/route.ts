@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword, signToken, setSessionCookie } from "@/lib/auth";
 import { generateShareCode } from "@/lib/share-code";
+import { verifyCode } from "@/lib/email-code";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, name } = await req.json();
+    const { email, password, name, code } = await req.json();
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: "请填写邮箱、密码和昵称" }, { status: 400 });
@@ -17,10 +18,19 @@ export async function POST(req: NextRequest) {
     if (!emailOk) {
       return NextResponse.json({ error: "邮箱格式不正确" }, { status: 400 });
     }
+    if (!code) {
+      return NextResponse.json({ error: "请输入邮箱验证码" }, { status: 400 });
+    }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return NextResponse.json({ error: "该邮箱已注册" }, { status: 409 });
+    }
+
+    // 校验邮箱验证码（注册用途）
+    const codeOk = await verifyCode({ email, purpose: "register", code: String(code) });
+    if (!codeOk) {
+      return NextResponse.json({ error: "验证码错误或已过期" }, { status: 400 });
     }
 
     // 用 ADMIN_EMAIL 注册的账号自动成为管理员
@@ -34,6 +44,7 @@ export async function POST(req: NextRequest) {
         passwordHash: await hashPassword(password),
         role: isAdmin ? "admin" : "user",
         shareCode: await generateShareCode(prisma),
+        emailVerified: new Date(),
       },
     });
 

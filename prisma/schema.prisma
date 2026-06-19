@@ -17,6 +17,7 @@ model User {
   direction    String? // 用户方向，如「前端」
   shareCode    String?  @unique // 8 位分享码
   shareCodeSetAt DateTime @default(now()) // 重置时间
+  emailVerified DateTime? // 邮箱验证时间，null=未验证（存量用户保持 null）
   createdAt    DateTime @default(now())
 
   questions         Question[] // 我创建/拥有的题
@@ -264,4 +265,20 @@ model SyncRecord {
 
   @@index([toUserId, createdAt])
   @@index([fromUserId])
+}
+
+// 邮箱验证码：注册验证、密码找回共用一张表，purpose 区分用途
+model EmailCode {
+  id        String   @id @default(cuid())
+  email     String // 目标邮箱
+  code      String // 6 位验证码
+  purpose   String // register | reset
+  consumed  Boolean  @default(false) // 已使用
+  expiresAt DateTime // 过期时间（发送后 10 分钟）
+  createdAt DateTime @default(now())
+  ip        String? // 发送方 IP，用于限流审计
+
+  @@index([email, purpose])
+  @@index([ip, createdAt])
+  @@index([expiresAt])
 }
